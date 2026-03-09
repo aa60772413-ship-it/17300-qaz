@@ -4,19 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="apple-touch-icon" href="https://meee.com.tw/xQdC6xC.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    
     <title>乙級網頁設計 - 行動題庫</title>
     <style>
         body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Microsoft JhengHei", sans-serif; 
-            background-color: #f4f7f9; 
-            margin: 0; 
-            padding: 0; 
-            -webkit-tap-highlight-color: transparent;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, "Microsoft JhengHei", sans-serif; 
+            background-color: #f4f7f9; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent;
         }
         .container { max-width: 100%; margin: auto; background: white; min-height: 100vh; padding-bottom: 50px; }
-        h2 { font-size: 1.25rem; color: #1a73e8; text-align: center; padding: 15px 0; margin: 0; background: #fff; border-bottom: 1px solid #eee; }
+        h2 { font-size: 1.2rem; color: #1a73e8; text-align: center; padding: 15px 0; margin: 0; background: #fff; border-bottom: 1px solid #eee; }
         
         /* 導覽列 */
         .filter-bar { 
@@ -26,18 +24,17 @@
         }
         button { 
             padding: 8px 10px; border: none; border-radius: 20px; cursor: pointer; 
-            font-weight: bold; font-size: 0.85rem; color: white; background-color: #5f6368;
-            flex-grow: 1; max-width: 90px;
+            font-weight: bold; font-size: 0.8rem; color: white; background-color: #5f6368;
+            flex-grow: 1; max-width: 85px;
         }
 
-        .btn-all { background-color: #1a73e8; }
-        .btn-sec { background-color: #ff922b; } /* 資訊共用橘色 */
+        .btn-all { background-color: #1a73e8 !important; }
+        .btn-sec { background-color: #ff922b !important; }
 
         /* 測驗面板 */
         .exam-setup { background: #fff9db; padding: 15px; margin: 10px; border-radius: 8px; border: 2px dashed #fcc419; display: none; }
         .setup-row { display: flex; flex-direction: column; gap: 8px; align-items: center; }
-        .setup-row div { font-size: 0.9rem; font-weight: bold; }
-        input[type="number"] { width: 60px; padding: 5px; border: 1px solid #ccc; border-radius: 5px; text-align: center; }
+        input[type="number"] { width: 50px; padding: 5px; border: 1px solid #ccc; border-radius: 5px; text-align: center; }
 
         /* 題目樣式 */
         .q-item { padding: 15px; border-bottom: 8px solid #f4f7f9; border-left: 5px solid transparent; }
@@ -46,15 +43,15 @@
         .count-3 { border-left-color: #ab0000; }     
         .count-4 { border-left-color: #00a627; } 
         
-        .q-img { max-width: 100%; height: auto; display: block; margin: 10px 0; border-radius: 5px; border: 1px solid #eee; }
-        .ans-tag { display: inline-block; padding: 2px 8px; background: #333; color: #fff; border-radius: 4px; font-size: 0.8rem; margin-bottom: 8px; }
-        .q-no { color: #888; font-size: 0.75rem; margin-bottom: 5px; }
-        .q-content { font-size: 1rem; font-weight: 500; line-height: 1.4; color: #202124; }
+        .q-img { max-width: 100%; height: auto; display: block; margin: 10px 0; border-radius: 5px; }
+        .ans-tag { display: inline-block; padding: 2px 8px; background: #333; color: #fff; border-radius: 4px; font-size: 0.75rem; margin-bottom: 8px; }
+        .q-no { color: #888; font-size: 0.7rem; margin-bottom: 5px; }
+        .q-content { font-size: 0.95rem; font-weight: 500; line-height: 1.5; color: #202124; }
 
         /* 選項區塊 */
         .quiz-options { margin-top: 15px; display: flex; flex-direction: column; gap: 8px; }
         .quiz-options label { padding: 12px; border: 1px solid #dadce0; border-radius: 10px; display: flex; align-items: center; background: #fff; }
-        .quiz-options input { margin-right: 12px; width: 18px; height: 18px; }
+        .quiz-options input { margin-right: 12px; width: 20px; height: 20px; }
 
         .feedback { margin-top: 10px; padding: 10px; border-radius: 5px; font-weight: bold; text-align: center; }
         .correct { background: #e6f4ea; color: #1e8e3e; }
@@ -63,18 +60,18 @@
         .rank-row { border-bottom: 1px solid #eee; }
         .rank-header { padding: 15px; display: flex; justify-content: space-between; align-items: center; }
         .rank-content { display: none; padding: 15px; background: #f9f9f9; border-left: 5px solid #6f42c1; }
-        #stats { text-align: center; font-size: 0.75rem; color: #666; padding: 5px; background: #fafafa; }
+        #stats { text-align: center; font-size: 0.7rem; color: #666; padding: 5px; background: #fafafa; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>17300 網頁設計乙級學科</h2>
+    <h2>網頁設計乙級 - 行動題庫</h2>
     <div id="stats">載入中...</div>
 
     <div class="filter-bar">
         <button onclick="render(0)" class="btn-all">全部</button>
-        <button onclick="render(1)" style="background-color: #4dabf7;">一般單選</button>
+        <button onclick="render(1)" style="background-color: #4dabf7;">單選</button>
         <button onclick="render('security')" class="btn-sec">資訊共用</button>
         <button onclick="render(2)" style="background-color: #eee960; color:#333">對2</button>
         <button onclick="render(3)" style="background-color: #ab0000;">對3</button>
@@ -85,11 +82,11 @@
 
     <div id="exam-setup-panel" class="exam-setup">
         <div class="setup-row">
-            <strong>📋 抽題題數設定</strong>
+            <strong>📋 隨機測驗設定</strong>
             <div>一般單選：<input type="number" id="single-count" value="10"></div>
             <div>資訊共用：<input type="number" id="security-count" value="5"></div>
             <div>一般複選：<input type="number" id="multi-count" value="5"></div>
-            <button onclick="startCustomExam()" style="background-color: #1e8e3e; max-width: 100%; width: 100%; height: 40px; margin-top:10px;">開始隨機測驗</button>
+            <button onclick="startCustomExam()" style="background-color: #1e8e3e; max-width: 100%; width: 100%; height: 45px; margin-top:10px; border-radius: 10px;">開始測驗</button>
         </div>
     </div>
 
@@ -98,6 +95,7 @@
 </div>
 
 <script>
+// 資料區 (保持你的原始資料不變)
 const rawData = [
  { "id": 169, "ans": "134", "count": 3, "content": "對於資料庫正規化（Normalization）的敘述，何者正確？ ①正規化的程度越高，資料的重複性會降低 ②正規化的程度越高，資料存取效能亦會越高 ③ 正規化的程度越高，資料表格的數量亦會增多 ④正規化程序可避免更新異常 。" },
   { "id": 170, "ans": "1234", "count": 4, "content": "對於 Web-based 資料庫應用系統的效能，影響因素有那些？ ① 網路頻寬 ②同時上線的使用者數量 ③資料庫的設計 ④資料庫伺服器硬體等級 。" },
@@ -909,8 +907,15 @@ const rawData = [
 ];
 
 
+// --- 自動編號邏輯 (解決重複與 undefined) ---
+rawData.forEach((q, index) => {
+    if (q.category === 'security') {
+        q.realId = "S" + (1000 + index); // 資安題從 S1000 開始
+    } else {
+        q.realId = index + 1; // 專業題重新排號 1, 2, 3...
+    }
+});
 
-const examData = rawData;
 let errorStats = JSON.parse(localStorage.getItem('webDesign_Errors')) || {};
 
 function toggleSetup() {
@@ -919,31 +924,27 @@ function toggleSetup() {
 }
 
 function getImgHtml(imgSrc) {
-    if (!imgSrc || imgSrc.trim() === "") return "";
-    
-    // 自動判斷：如果是 meee.com.tw 的網址且沒有副檔名，就自動補上 .png
-    let realSrc = imgSrc;
-    if (imgSrc.includes("meee.com.tw") && !imgSrc.endsWith(".jpg")) {
-        realSrc = imgSrc + ".jpg";
+    if (!imgSrc) return "";
+    let url = imgSrc.trim();
+    if (url.includes("meee.com.tw") && !url.toLowerCase().endsWith(".png") && !url.toLowerCase().endsWith(".jpg")) {
+        url += ".png";
     }
-    
-    return `<img src="${realSrc}" class="q-img" alt="題目圖片" onerror="this.style.display='none'">`;
+    return `<img src="${url}" class="q-img" onerror="this.style.display='none'">`;
 }
 
 function render(filterMode) {
     document.getElementById('exam-setup-panel').style.display = 'none';
-    const list = document.getElementById('main-list');
-    const stats = document.getElementById('stats');
     document.getElementById('quiz-result').style.display = 'none';
+    const list = document.getElementById('main-list');
     list.innerHTML = '';
     
     let filtered = [];
-    if (filterMode === 0) filtered = examData;
-    else if (filterMode === 'security') filtered = examData.filter(q => q.category === 'security');
-    else if (filterMode === 1) filtered = examData.filter(q => q.count === 1 && q.category !== 'security');
-    else filtered = examData.filter(q => q.count === filterMode);
+    if (filterMode === 0) filtered = rawData;
+    else if (filterMode === 'security') filtered = rawData.filter(q => q.category === 'security');
+    else if (filterMode === 1) filtered = rawData.filter(q => q.count === 1 && q.category !== 'security');
+    else filtered = rawData.filter(q => q.count === filterMode);
 
-    stats.innerHTML = `顯示 ${filtered.length} 題 / 總計 ${examData.length} 題`;
+    document.getElementById('stats').innerHTML = `顯示 ${filtered.length} 題 / 總計 ${rawData.length} 題`;
 
     filtered.forEach(q => {
         const div = document.createElement('div');
@@ -951,7 +952,7 @@ function render(filterMode) {
         if (q.category === 'security') div.style.borderLeft = "5px solid #ff922b";
         
         div.innerHTML = `
-            <div class="q-no">#${q.id} ${q.category === 'security' ? '<span style="color:#ff922b">[資訊共用]</span>' : ''}</div>
+            <div class="q-no">#${q.realId} ${q.category === 'security' ? '<span style="color:#ff922b">[資訊共用]</span>' : ''}</div>
             <div class="ans-tag">答案：${q.ans}</div>
             <div class="q-content">${q.content}</div>
             ${getImgHtml(q.img)}
@@ -966,9 +967,9 @@ function startCustomExam() {
     const sec = parseInt(document.getElementById('security-count').value) || 0;
     const m = parseInt(document.getElementById('multi-count').value) || 0;
 
-    const singlePool = examData.filter(q => q.count === 1 && q.category !== 'security').sort(() => 0.5 - Math.random());
-    const secPool = examData.filter(q => q.category === 'security').sort(() => 0.5 - Math.random());
-    const multiPool = examData.filter(q => q.count > 1).sort(() => 0.5 - Math.random());
+    const singlePool = rawData.filter(q => q.count === 1 && q.category !== 'security').sort(() => 0.5 - Math.random());
+    const secPool = rawData.filter(q => q.category === 'security').sort(() => 0.5 - Math.random());
+    const multiPool = rawData.filter(q => q.count > 1).sort(() => 0.5 - Math.random());
 
     const selected = [...singlePool.slice(0, s), ...secPool.slice(0, sec), ...multiPool.slice(0, m)].sort(() => 0.5 - Math.random());
     
@@ -985,18 +986,20 @@ function renderQuiz(selected) {
         div.className = 'q-item';
         const type = q.count === 1 ? 'radio' : 'checkbox';
         let options = '';
-        for(let i=1; i<=4; i++) { options += `<label><input type="${type}" name="q-${q.id}" value="${i}"> (${i}) 選項 </label>`; }
+        for(let i=1; i<=4; i++) { 
+            options += `<label><input type="${type}" name="q-${q.realId}" value="${i}"> (${i}) 選項 </label>`; 
+        }
         div.innerHTML = `
-            <div class="q-no">測驗第 ${index + 1} 題 (#${q.id})</div>
+            <div class="q-no">測驗第 ${index + 1} 題 (#${q.realId})</div>
             <div class="q-content">${q.content}</div>
             ${getImgHtml(q.img)}
-            <div class="quiz-options" data-ans="${q.ans}" id="box-${q.id}">${options}</div>
-            <div id="fb-${q.id}"></div>
+            <div class="quiz-options" data-ans="${q.ans}" id="box-${q.realId}">${options}</div>
+            <div id="fb-${q.realId}"></div>
         `;
         list.appendChild(div);
     });
     const b = document.createElement('button');
-    b.innerHTML = "提交答案";
+    b.innerHTML = "提交並查看分數";
     b.style.cssText = "width:90%; height:50px; margin:20px 5%; background:#1e8e3e; color:white; font-size:1.1rem; border:none; border-radius:10px;";
     b.onclick = submitExam;
     list.appendChild(b);
@@ -1011,8 +1014,10 @@ function submitExam() {
         const real = box.getAttribute('data-ans').split('').sort().join('');
         const user = Array.from(box.querySelectorAll('input:checked')).map(i => i.value).sort().join('');
         const fb = document.getElementById(`fb-${id}`);
-        if (user === real) { correct++; fb.innerHTML = `<div class="feedback correct">✅ 正確</div>`; }
-        else { 
+        if (user === real) { 
+            correct++; 
+            fb.innerHTML = `<div class="feedback correct">✅ 正確</div>`; 
+        } else { 
             fb.innerHTML = `<div class="feedback wrong">❌ 錯誤 (答案：${box.getAttribute('data-ans')})</div>`; 
             errorStats[id] = (errorStats[id] || 0) + 1; 
         }
@@ -1022,20 +1027,17 @@ function submitExam() {
     const score = Math.round((correct / boxes.length) * 100);
     const res = document.getElementById('quiz-result');
     res.style.display = 'block';
-    res.innerHTML = `<h3>得分：${score}</h3><button onclick="showRank()" class="btn-rank" style="background:#6f42c1; color:white; padding:10px; border-radius:10px; border:none;">查看錯題排行</button>`;
+    res.innerHTML = `<h3>得分：${score}</h3><button onclick="showRank()" style="background:#6f42c1; color:white; padding:10px 20px; border-radius:10px; border:none; margin-bottom:10px;">查看錯題排行</button>`;
     window.scrollTo(0, 0);
 }
 
 function showRank() {
-    // 1. 先把不相干的區塊隱藏或清空
-    document.getElementById('exam-setup-panel').style.display = 'none'; // 隱藏測驗設定
-    document.getElementById('quiz-result').style.display = 'none';    // 隱藏得分結果
-    
+    document.getElementById('exam-setup-panel').style.display = 'none';
+    document.getElementById('quiz-result').style.display = 'none';
     const list = document.getElementById('main-list');
     
-    // 2. 準備清空內容
     const sorted = Object.entries(errorStats)
-        .map(([id, count]) => ({ id: parseInt(id), count }))
+        .map(([id, count]) => ({ id, count }))
         .sort((a, b) => b.count - a.count);
 
     if (sorted.length === 0) {
@@ -1043,39 +1045,35 @@ function showRank() {
         return;
     }
 
-    // 3. 徹底清空列表後再開始畫排行
-    list.innerHTML = `<div style="text-align:center; padding:10px;"><button onclick="clearStats()" style="background:#ff4d4f; color:white; border:none; padding:10px; border-radius:5px; width:90%">🗑️ 清空所有紀錄</button></div>`;
+    list.innerHTML = `<div style="text-align:center; padding:10px;"><button onclick="clearStats()" style="background:#ff4d4f; color:white; border:none; padding:10px; border-radius:5px; width:90%">🗑️ 清空紀錄</button></div>`;
     
     sorted.slice(0, 30).forEach((item, index) => {
-        const q = examData.find(x => x.id === item.id);
+        const q = rawData.find(x => x.realId == item.id);
         if(q) {
             const div = document.createElement('div');
             div.className = 'rank-row';
             div.innerHTML = `
                 <div class="rank-header" onclick="this.nextElementSibling.style.display = (this.nextElementSibling.style.display === 'block' ? 'none' : 'block')">
-                    <div style="font-size:0.9rem;"><strong>${index+1}.</strong> #${q.id} ${q.content.substring(0, 15)}...</div>
+                    <div style="font-size:0.9rem;"><strong>${index+1}.</strong> #${q.realId} ${q.content.substring(0, 15)}...</div>
                     <div style="color:red">錯 ${item.count} 次 ▾</div>
                 </div>
                 <div class="rank-content" style="display:none;">
                     <div class="ans-tag">答案：${q.ans}</div>
-                    <div style="font-weight:bold;">${q.content}</div>
+                    <div style="font-weight:bold; font-size:0.95rem;">${q.content}</div>
                     ${getImgHtml(q.img)}
                 </div>
             `;
             list.appendChild(div);
         }
     });
-    window.scrollTo(0, 0); // 回到最上方
+    window.scrollTo(0, 0);
 }
 
 function clearStats() {
-    if(confirm("確定要清空紀錄嗎？")) { localStorage.removeItem('webDesign_Errors'); errorStats = {}; showRank(); }
+    if(confirm("確定要清空嗎？")) { localStorage.removeItem('webDesign_Errors'); errorStats = {}; showRank(); }
 }
 
 render(0);
 </script>
 </body>
 </html>
-
-
-
