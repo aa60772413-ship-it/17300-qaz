@@ -1024,10 +1024,25 @@ function submitExam() {
 }
 
 function showRank() {
+    // 1. 先把不相干的區塊隱藏或清空
+    document.getElementById('exam-setup-panel').style.display = 'none'; // 隱藏測驗設定
+    document.getElementById('quiz-result').style.display = 'none';    // 隱藏得分結果
+    
     const list = document.getElementById('main-list');
-    const sorted = Object.entries(errorStats).map(([id, count]) => ({ id: parseInt(id), count })).sort((a, b) => b.count - a.count);
-    if (sorted.length === 0) return list.innerHTML = '<p style="text-align:center; padding: 20px;">目前尚無紀錄</p>';
+    
+    // 2. 準備清空內容
+    const sorted = Object.entries(errorStats)
+        .map(([id, count]) => ({ id: parseInt(id), count }))
+        .sort((a, b) => b.count - a.count);
+
+    if (sorted.length === 0) {
+        list.innerHTML = '<p style="text-align:center; padding: 20px;">目前尚無錯題紀錄</p>';
+        return;
+    }
+
+    // 3. 徹底清空列表後再開始畫排行
     list.innerHTML = `<div style="text-align:center; padding:10px;"><button onclick="clearStats()" style="background:#ff4d4f; color:white; border:none; padding:10px; border-radius:5px; width:90%">🗑️ 清空所有紀錄</button></div>`;
+    
     sorted.slice(0, 30).forEach((item, index) => {
         const q = examData.find(x => x.id === item.id);
         if(q) {
@@ -1038,7 +1053,7 @@ function showRank() {
                     <div style="font-size:0.9rem;"><strong>${index+1}.</strong> #${q.id} ${q.content.substring(0, 15)}...</div>
                     <div style="color:red">錯 ${item.count} 次 ▾</div>
                 </div>
-                <div class="rank-content">
+                <div class="rank-content" style="display:none;">
                     <div class="ans-tag">答案：${q.ans}</div>
                     <div style="font-weight:bold;">${q.content}</div>
                     ${getImgHtml(q.img)}
@@ -1047,6 +1062,7 @@ function showRank() {
             list.appendChild(div);
         }
     });
+    window.scrollTo(0, 0); // 回到最上方
 }
 
 function clearStats() {
@@ -1057,3 +1073,4 @@ render(0);
 </script>
 </body>
 </html>
+
