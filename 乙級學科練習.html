@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>乙級網頁設計 - 行動題庫</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Microsoft JhengHei", sans-serif; 
+            background-color: #f4f7f9; 
+            margin: 0; 
+            padding: 0; 
+            -webkit-tap-highlight-color: transparent;
+        }
+        .container { max-width: 100%; margin: auto; background: white; min-height: 100vh; padding-bottom: 50px; }
+        h2 { font-size: 1.25rem; color: #1a73e8; text-align: center; padding: 15px 0; margin: 0; background: #fff; border-bottom: 1px solid #eee; }
+        
+        /* 導覽列 */
+        .filter-bar { 
+            position: sticky; top: 0; background: white; padding: 10px 5px; 
+            border-bottom: 1px solid #ddd; display: flex; gap: 5px; flex-wrap: wrap; 
+            z-index: 100; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        button { 
+            padding: 8px 10px; border: none; border-radius: 20px; cursor: pointer; 
+            font-weight: bold; font-size: 0.85rem; color: white; background-color: #5f6368;
+            flex-grow: 1; max-width: 90px;
+        }
+
+        .btn-all { background-color: #1a73e8; }
+        .btn-sec { background-color: #ff922b; } /* 資訊共用橘色 */
+
+        /* 測驗面板 */
+        .exam-setup { background: #fff9db; padding: 15px; margin: 10px; border-radius: 8px; border: 2px dashed #fcc419; display: none; }
+        .setup-row { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+        .setup-row div { font-size: 0.9rem; font-weight: bold; }
+        input[type="number"] { width: 60px; padding: 5px; border: 1px solid #ccc; border-radius: 5px; text-align: center; }
+
+        /* 題目樣式 */
+        .q-item { padding: 15px; border-bottom: 8px solid #f4f7f9; border-left: 5px solid transparent; }
+        .count-1 { border-left-color: #4dabf7; }
+        .count-2 { border-left-color: #eee960; } 
+        .count-3 { border-left-color: #ab0000; }     
+        .count-4 { border-left-color: #00a627; } 
+        
+        .q-img { max-width: 100%; height: auto; display: block; margin: 10px 0; border-radius: 5px; border: 1px solid #eee; }
+        .ans-tag { display: inline-block; padding: 2px 8px; background: #333; color: #fff; border-radius: 4px; font-size: 0.8rem; margin-bottom: 8px; }
+        .q-no { color: #888; font-size: 0.75rem; margin-bottom: 5px; }
+        .q-content { font-size: 1rem; font-weight: 500; line-height: 1.4; color: #202124; }
+
+        /* 選項區塊 */
+        .quiz-options { margin-top: 15px; display: flex; flex-direction: column; gap: 8px; }
+        .quiz-options label { padding: 12px; border: 1px solid #dadce0; border-radius: 10px; display: flex; align-items: center; background: #fff; }
+        .quiz-options input { margin-right: 12px; width: 18px; height: 18px; }
+
+        .feedback { margin-top: 10px; padding: 10px; border-radius: 5px; font-weight: bold; text-align: center; }
+        .correct { background: #e6f4ea; color: #1e8e3e; }
+        .wrong { background: #fce8e6; color: #d93025; }
+
+        .rank-row { border-bottom: 1px solid #eee; }
+        .rank-header { padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .rank-content { display: none; padding: 15px; background: #f9f9f9; border-left: 5px solid #6f42c1; }
+        #stats { text-align: center; font-size: 0.75rem; color: #666; padding: 5px; background: #fafafa; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>17300 網頁設計乙級學科</h2>
+    <div id="stats">載入中...</div>
+
+    <div class="filter-bar">
+        <button onclick="render(0)" class="btn-all">全部</button>
+        <button onclick="render(1)" style="background-color: #4dabf7;">一般單選</button>
+        <button onclick="render('security')" class="btn-sec">資訊共用</button>
+        <button onclick="render(2)" style="background-color: #eee960; color:#333">對2</button>
+        <button onclick="render(3)" style="background-color: #ab0000;">對3</button>
+        <button onclick="render(4)" style="background-color: #00a627;">全對</button>
+        <button onclick="toggleSetup()" style="background-color: #dc3545;">測驗</button>
+        <button onclick="showRank()" style="background-color: #6f42c1;">排行</button>
+    </div>
+
+    <div id="exam-setup-panel" class="exam-setup">
+        <div class="setup-row">
+            <strong>📋 抽題題數設定</strong>
+            <div>一般單選：<input type="number" id="single-count" value="10"></div>
+            <div>資訊共用：<input type="number" id="security-count" value="5"></div>
+            <div>一般複選：<input type="number" id="multi-count" value="5"></div>
+            <button onclick="startCustomExam()" style="background-color: #1e8e3e; max-width: 100%; width: 100%; height: 40px; margin-top:10px;">開始隨機測驗</button>
+        </div>
+    </div>
+
+    <div id="quiz-result" style="display:none; padding: 20px; text-align: center; border-bottom: 2px solid #ddd;"></div>
+    <div id="main-list"></div>
+</div>
+
+<script>
+const rawData = [
+ { "id": 169, "ans": "134", "count": 3, "content": "對於資料庫正規化（Normalization）的敘述，何者正確？ ①正規化的程度越高，資料的重複性會降低 ②正規化的程度越高，資料存取效能亦會越高 ③ 正規化的程度越高，資料表格的數量亦會增多 ④正規化程序可避免更新異常 。" },
+  { "id": 170, "ans": "1234", "count": 4, "content": "對於 Web-based 資料庫應用系統的效能，影響因素有那些？ ① 網路頻寬 ②同時上線的使用者數量 ③資料庫的設計 ④資料庫伺服器硬體等級 。" },
+  { "id": 171, "ans": "34", "count": 2, "content": "如要確保關聯式資料庫的參考完整性（Referential Integrity ），需使用到那些鍵（Key）？ ①Candidate Key ②Secondary Key ③Primary Key ④Foreign Key 。" },
+  { "id": 172, "ans": "12", "count": 2, "content": "那些資料庫技術可以增進資料表查詢的效率？ ①Index ②Stored Procedure ③Backup ④View 。" },
+  { "id": 173, "ans": "124", "count": 3, "content": "關於外鍵（Foreign Key）特性的描述，何者正確？ ① 外鍵一定參考其它關聯表的主鍵 ②外鍵在關聯表內不一定是主鍵 ③外鍵和參考的主鍵屬於相同定義域，且屬性名稱一定相同 ④外鍵可以是空值（NULL） 。" },
+  { "id": 174, "ans": "1234", "count": 4, "content": "對於視界（View）的敘述，何者正確？ ①可被視為 External Schema ②其內部資料是動態產生的 ③可隱藏複雜的查詢語法 ④可限制使用者的存取權限 。" },
+  { "id": 175, "ans": "1234", "count": 4, "content": "何者是選擇資料庫管理系統（DBMS）時應考慮的事項？ ①可應用的預算金額 ②有那些廠牌的軟體或替代品 ③公司的需求與軟體提供的功能是否符合 ④與現有資訊系統的整合 。" },
+  { "id": 176, "ans": "123", "count": 3, "content": "有關分散式資料庫系統的描述，何者正確？ ①資料可以依資料的性質與資料的種類而分散到不同的地方，減少傳輸處理的時間與風險 ②允許資料共享並保有各自的控制性 ③改善效能，各資料處理中心可同時處理不同的資料 ④各資料庫間的管理系統必須是相同版本的 DBMS 。" },
+  { "id": 177, "ans": "234", "count": 3, "content": "DBMS 是資料庫系統的核心，一般 DBMS 會提供多種基本功能，何者較為常見？ ①資料壓縮 ②建立各類物件的 DDL 語法 ③定義綱要（ Schema）④資料查詢（Query ）或異動（新增、刪除、修改） 。" },
+  { "id": 178, "ans": "123", "count": 3, "content": "為增加資料庫執行效能，何者正確？ ① 選定並建立合適的索引（Index） ②適度調整資料庫的綱目（Schema ） ③建議並改寫壞的 SQL 指令（Bad SQL） ④將資料庫主機的記憶體加到最大 。" },
+  { "id": 179, "ans": "124", "count": 3, "content": "資料庫應用系統開發過程中，何者屬於資料庫系統需求定義階段所需完成的工作項目？ ①確定作業範圍 ②查訪現況與課題分析 ③設計 SQL 查詢句 ④定義資料庫的資料與功能需求 。" },
+  { "id": 180, "ans": "123", "count": 3, "content": "資料庫應用系統開發的過程中，何者屬於可行性分析階段所需考慮的項目？ ①市場上可以提供技術支援的廠商 ②確定整個專案的成本 ③確定作業範圍 ④定義資料庫的資料表與功能需求 。" },
+  { "id": 181, "ans": "13", "count": 2, "content": "對於關聯正規化（Normalize ）的敘述，何者正確？ ① 正規化的目的之一是消除更新時的異常現象 ②為了符合正規化型式的條件，會將關聯切割成數個失真（ Lossy）的關聯 ③越嚴格的正規化型式，查詢時便要花越多時間來做合併（Join） ④正規化步驟是從 n+1 往第 n 型式反覆執行 。" },
+  { "id": 182, "ans": "124", "count": 3, "content": "何者是關聯式資料庫的特點？ ①邏輯上以表格呈現，物理上可能為循序或索引結構 ②以二維資料表概念為基礎模型化資料關聯 ③ 表格中的 Field Value 可以是一個集合 ④描述資料的定義稱為綱要（ Schema） 。" },
+  { "id": 183, "ans": "124", "count": 3, "content": "關於以 SOAP 為基礎所建構的 Web 服務，何者正確？ ①SOAP 使用 HTTP 需考慮安全性問題 ②SOAP 是與平台無關的協定 ③SOAP 是語言獨立的協定 ④SOAP 也算是一種 RPC 的實作 。" },
+  { "id": 184, "ans": "1234", "count": 4, "content": "良好的 XML 文件(well-formed XML) 的敘述，何者正確？ ①文件需包含一個或多個元素 ②根元素不出現在其他任何元素內容中 ③起始與結束標籤必須成對嵌套 ④包含子元素與父元素的層級關係 。" },
+  { "id": 185, "ans": "12", "count": 2, "content": "為了解決 HTTP 通訊協定無法保留狀態(stateless) 的特質，那些方法可以協助進行管理？ ①cookie ②session ③ TCP ④encoding 。" },
+  { "id": 186, "ans": "24", "count": 2, "content": "關於表單中之隱藏控制項(hidden)的敘述，何者正確？ ①傳遞時會以 DES 加密 ②其控制項不會以視覺方式出現於螢幕上 ③專門用來傳輸密碼 ④可用來傳遞網頁與網頁間的狀態 。" },
+  { "id": 187, "ans": "234", "count": 3, "content": "色彩配色有分加色及減色混合，色料的三原色為那些？ ①藍 ②洋紅 ③黃 ④青 。" },
+  { "id": 188, "ans": "134", "count": 3, "content": "那些屬於色彩三屬性？ ①色相 ②對比 ③明度 ④彩度 。" },
+  { "id": 189, "ans": "123", "count": 3, "content": "那些色彩具有彩度？ ①紅色 ②綠色 ③藍色 ④黑色 。" },
+  { "id": 190, "ans": "123", "count": 3, "content": "有關 GIF 格式的圖檔那些敘述正確？ ①可呈現黑白色圖檔 ②可呈現 16 色圖檔 ③可呈現 256 色圖檔 ④無法呈現全彩色圖檔 。" },
+  { "id": 191, "ans": "234", "count": 3, "content": "設計美學中，設計構成要素個別存在時，那些具有伸長的特性？ ①點 ②線 ③面 ④體 。" },
+  { "id": 192, "ans": "123", "count": 3, "content": "設計美學中，何者的外型具對稱性構圖？ ①飛機 ②蝴蝶 ③老鷹 ④雲 。" },
+  { "id": 193, "ans": "124", "count": 3, "content": "設計美學中，何者的外型具放射性構圖？ ①菊花 ②輪胎 ③黃色小鴨 ④玫瑰花 。" },
+  { "id": 194, "ans": "124", "count": 3, "content": "設計美學中，何者屬於基礎造形考量的基本要素？ ①形態 ②機能 ③利益 ④美感 。" },
+  { "id": 195, "ans": "134", "count": 3, "content": "何種影像儲存格式包含透明度？ ①GIF ②JPEG ③TIFF ④PNG 。" },
+  { "id": 196, "ans": "123", "count": 3, "content": "有關網頁文件 DOM 模型的敘述，那些正確？ ①是 Document Object Model 簡稱 ②可用 DOM 樹來表示網頁結構 ③可存取 DOM 樹的節點內容 ④DOM 樹的節點結構亦可修改 。" },
+  { "id": 197, "ans": "23", "count": 2, "content": "關於 HTML DOM 模型之敘述那些正確？ ①只有部分瀏覽器支援 ②可動態更改網頁內容 ③JavaScript 可修改 DOM 樹節點內容與結構 ④元素間無繼承關係 。" },
+  { "id": 198, "ans": "124", "count": 3, "content": "HTML DOM 模型介面包含那些元素物件？ ①HTMLFormElement ②HTMLTableElement ③HTMLRowElement ④HTMLIFrameElement 。" },
+  { "id": 199, "ans": "123", "count": 3, "content": "HTML Tag 對應到 DOM 元素的關係，那些正確？ ①H2 對應到 HTMLHeadingElement ②IMG 對應到 HTMLImageElement ③TD 對應到 HTMLTableCellElement ④IFRAME 對應到 HTMLFrameElement 。" },
+  { "id": 200, "ans": "124", "count": 3, "content": "在 HTML DOM 模型中的 HTMLBodyElement 物件，其屬性說明那些正確？ ①link 為預設未拜訪連結顏色 ②aLink 為活動中連結顏色 ③textColor 為文字顏色 ④vLink 為已拜訪連結顏色 。" },
+  { "id": 201, "ans": "124", "count": 3, "content": "在 HTML DOM 模型中的 HTMLSelectElement 物件，關於其屬性說明那些正確？ ①length 為選項個數 ②multiple 為是否可多選 ③size 為被選上數量 ④selectedIndex 為被選中項目的索引 。" },
+  { "id": 202, "ans": "1234", "count": 4, "content": "國家通訊傳播委員會(NCC)頒訂網站無障礙規範 2.0 版之設計原則何者正確？ ①可感知 ②可操作 ③可理解 ④穩健性 。" },
+  { "id": 203, "ans": "13", "count": 2, "content": "無障礙規範 2.0 版「可感知原則」包含那些指引項目？ ①替代文字 ②充足時間 ③時序媒體 ④輸入協助 。" },
+  { "id": 204, "ans": "123", "count": 3, "content": "無障礙規範 2.0 版「可操作原則」包含那些指引項目？ ①鍵盤可操作 ②充足時間 ③可導覽 ④可讀性 。" },
+  { "id": 205, "ans": "124", "count": 3, "content": "無障礙規範 2.0 版「可理解原則」包含那些指引項目？ ①可預期性 ②輸入協助 ③相容性 ④可讀性 。" },
+  { "id": 206, "ans": "1234", "count": 4, "content": "何者屬於 ISO 的 OSI 模型中網路七層架構？ ①實體層 ②資料連接層 ③網路層 ④傳送層 。" },
+  { "id": 207, "ans": "123", "count": 3, "content": "何者屬於 TCP/IP 的網路架構？ ①網路存取層 ②網際層 ③應用層 ④實體層 。" },
+  { "id": 208, "ans": "123", "count": 3, "content": "何者是 OSI 模型中實體層所定義的網路標準？ ①網路線 ②各種無線連線方式 ③各種設備規範 ④應用程式之對談 。" },
+  { "id": 209, "ans": "14", "count": 2, "content": "何者是 OSI 模型中實體層所定義的網路標準？ ①傳輸訊號的電壓 ②檔案的讀取 ③檔案的複製 ④各種接頭的規格 。" },
+  { "id": 210, "ans": "12", "count": 2, "content": "何者是 OSI 模型中傳送層所定義的網路標準？ ①技術的封包格式 ②資料封包的傳送 ③檔案的讀取 ④各種無線連線方式 。" },
+  { "id": 211, "ans": "12", "count": 2, "content": "何者是 OSI 模型中傳送層所定義的網路標準？ ①流程的控制 ②傳輸過程的偵測檢查 ③檔案的開啟 ④檔案的關閉 。" },
+  { "id": 212, "ans": "12", "count": 2, "content": "何者是 OSI 模型中表現層所定義的網路標準？ ① 網路服務之間資料格式的轉換 ②資料的加解密 ③檔案的開啟 ④檔案的關閉 。" },
+  { "id": 213, "ans": "12", "count": 2, "content": "何者是 OSI 模型中表現層所定義的網路標準？ ① 電腦之間的連線建立 ②電腦之間的連線終止 ③電腦之間的連線維持 ④確定網路服務建立連線的確認 。" },
+  { "id": 214, "ans": "134", "count": 3, "content": "那些是網頁檔之副檔名？ ①.php ②.xml ③.aspx ④.jsp 。" },
+  { "id": 215, "ans": "1234", "count": 4, "content": "那些技術用於輔助製作動態網頁？ ①ASP ②PHP ③CGI ④JSP 。" },
+  { "id": 216, "ans": "13", "count": 2, "content": "關於 HTML 網頁檔案的敘述何者正確？ ①副檔名可為.htm 或.html ②不能用記事本編輯 ③內容為一連串標籤組合 ④須放在伺服器上才能檢視 。" },
+  { "id": 217, "ans": "123", "count": 3, "content": "機關首頁之搜尋功能設計，那些是正確之概念？ ①顯而易見 ②易於操作 ③欄位夠寬 ④範圍應涵蓋整個網際網路 。" },
+  { "id": 218, "ans": "124", "count": 3, "content": "關於網頁之圖像與動畫使用，那些是正確之概念？ ①可採用圖像加強說明 ②Logo 置於顯著位置 ③強制瀏覽者觀看動畫 ④避免過度使用浮水印影像 。" },
+  { "id": 219, "ans": "12", "count": 2, "content": "JavaScript 之敘述那些正確？ ①不允許讀取硬碟資料，安全性高 ②多數瀏覽器支援，具跨平台特性 ③程式編譯後與 HTML 結合 ④反應迅速且直接 。" },
+  { "id": 220, "ans": "124", "count": 3, "content": "對於 JSP 之敘述那些較適當？ ①以 Servlet 技術為基礎 ②屬於 J2EE 的一部分 ③轉譯為 Servlet 再執行 ④以 Java 技術為主開發的動態網頁 。" },
+  { "id": 221, "ans": "14", "count": 2, "content": "在 Windows 環境下，一般軟體安裝程式都使用什麼名稱？ ①setup ②uninstall ③system ④install 。" },
+  { "id": 222, "ans": "124", "count": 3, "content": "何類的作業系統不適合在 UEFI 環境下來安裝？ ①DOS ②Windows XP ③Windows 8 ④Fedora core 8 。" },
+  { "id": 223, "ans": "123", "count": 3, "content": "何者為使用資料庫的優點？ ①減少資料重複性 ②強化保密與安全 ③減少儲存空間 ④不需專人管理 。" },
+  { "id": 224, "ans": "134", "count": 3, "content": "何者為資料庫中實體-關係的主要構成元素？ ①實體 ② 模型 ③屬性 ④關係 。" },
+  { "id": 225, "ans": "124", "count": 3, "content": "何者是資料庫主鍵的特性？ ①值具有唯一性 ②在意義上要有代表性 ③主鍵最多 20 欄位 ④具有一般索引功能 。" },
+  { "id": 226, "ans": "234", "count": 3, "content": "關於資料傳輸之敘述何者不正確？ ①速率可用鮑率衡量 ②鮑率為 1 表示每秒 1 Byte ③T1 速率為 65 KB ④非同步較同步適合傳送大量資料 。" },
+  { "id": 227, "ans": "134", "count": 3, "content": "何種協定無支援壓縮功能？ ①SLIP ②PPP ③PPTP ④PNP 。" },
+  { "id": 228, "ans": "123", "count": 3, "content": "關於網路主幹媒體 Trunk Carrier 速率之敘述何者正確？ ①T1 為 1.544 Mbps ②T2 為 6.312 Mbps ③T3 為 44.736 Mbps ④T4 為 89.472 Mbps 。" },
+  { "id": 229, "ans": "134", "count": 3, "content": "關於網路主幹媒體 Trunk Carrier 通道數量之敘述何者正確？ ①T1 為 24 ②T2 為 48 ③T3 為 672 ④T4 為 4032 。" },
+  { "id": 230, "ans": "123", "count": 3, "content": "關於網路主幹媒體 European Carrier 速率之敘述何者正確？ ①E1 為 2.048 Mbps ②E2 為 8.448 Mbps ③E3 為 34.368 Mbps ④E4 為 565.148 Mbps 。" },
+  { "id": 231, "ans": "134", "count": 3, "content": "關於網路主幹媒體 European Carrier 通道數量之敘述何者正確？ ①E1 為 32 ②E2 為 64 ③E3 為 512 ④E5 為 8192 。" },
+  { "id": 232, "ans": "23", "count": 2, "content": "關於同步光纖網路媒體 SONET 速率之敘述何者正確？ ①OC-384 為 39.8 Gbps ②OC-768 為 39.8 Gbps ③OC-1536 為 79.6 Gbps ④OC-3072 為 79.6 Gbps 。" },
+  { "id": 233, "ans": "123", "count": 3, "content": "何者為 ATM 網路之特性？ ①每個連線擁有專屬頻寬 ②提供多樣化速率 ③省略錯誤檢查與流量控制 ④封包長度有彈性 。" },
+  { "id": 234, "ans": "123", "count": 3, "content": "何者為 ATM 網路所提供的傳輸速率？ ①155 Mbps ②622 Mbps ③2.4 Gbps ④4.3 Gbps 。" },
+  { "id": 235, "ans": "123", "count": 3, "content": "何者為 OSI 第二層(Data Link) 所提供之功能？ ①資料包裝與拆裝 ②資料分段與組合 ③資料流量控制 ④資料繞送 。" },
+  { "id": 236, "ans": "124", "count": 3, "content": "關於網路傳輸協定之敘述何者正確？ ① TCP 是可靠性傳輸 ②UDP 是非可靠性傳輸 ③IP 是可靠性傳輸 ④ATM 是連線導向傳輸 。" },
+  { "id": 237, "ans": "124", "count": 3, "content": "關於群播(Multicast)之敘述何者正確？ ①適用於視訊會議系統 ②群體成員用同一個群播 IP ③加入離開須徵得伺服器同意 ④資料一次送給一群使用者 。" },
+  { "id": 238, "ans": "24", "count": 2, "content": "關於通訊協定之敘述何者正確？ ①TCP/IP 分為五層 ②NetBIOS 是 IBM 發展的 PC 網路協定 ③IPX/SPX 是 Novell 發展的 ④AppleTalk 是 Apple 為 Mac 設計的 。" },
+  { "id": 239, "ans": "124", "count": 3, "content": "何者為死結(Deadlock)發生的必要條件？ ①Mutual Exclusion ②Wait for Condition ③Preemption Condition ④Circular Wait 。" },
+  { "id": 240, "ans": "124", "count": 3, "content": "Linux 作業環境中，何者可提供文字之編輯？ ①vi ②vim ③edit ④joe 。" },
+  { "id": 241, "ans": "123", "count": 3, "content": "Linux 作業環境中，何者可作為關機之指令？ ①halt ②poweroff ③shutdown ④init 3 。" },
+  { "id": 242, "ans": "134", "count": 3, "content": "何者是 Linux 發行的版本(Distribution)？ ① Fedora ②SUSI ③Ubuntu ④Debian 。" },
+  { "id": 285, "ans": "14", "count": 2, "content": "要修改產品資料表中主鍵 Pcode 為 '005' 的 Price 由 25 改成 30，那些 SQL 指令可以使用？ ①UPDATE Product SET Price=30 WHERE Pcode='005'; ④UPDATE Product SET Price=30 WHERE Pcode='005' AND Price='25'; 。" },
+  { "id": 286, "ans": "1234", "count": 4, "content": "有關 SOAP 函式的敘述，何者正確？ ①addFunction() 可新增處理函式 ②handle() 處理需求 ③setClass() 設定處理類別 ④getFunctions() 取得列表 。" },
+  { "id": 287, "ans": "124", "count": 3, "content": "使用樣版的好處，何者正確？ ①美工與程式設計可分開作業 ②易於實現 MVC 架構 ③可增加網頁安全 ④更方便使用編輯工具 。" },
+  { "id": 288, "ans": "124", "count": 3, "content": "MariaDB 的函式敘述，何者正確？ ①mysql_create_db() 建立資料庫 ②mysql_db_name() 取得名稱 ③mysql_drop_db() 也可用來建立 ④mysql_errno() 取得錯誤碼 。" },
+  { "id": 289, "ans": "234", "count": 3, "content": "PHP 處理 MariaDB 資料庫相關函式的敘述，何者正確？ ①mysql_connect() 用來開啟資料表 ②mysql_select_db() 選擇資料庫 ③mysql_query() 下達 SQL 語法 ④mysql_close() 關閉連線 。" },
+  { "id": 290, "ans": "123", "count": 3, "content": "SQL 語法的敘述，何者正確？ ①insert 新增 ②update 更新 ③select 查詢 ④統稱為非查詢語法 。" },
+  { "id": 291, "ans": "23", "count": 2, "content": "欲從資料表中刪除特定條件的紀錄，需搭配那些 SQL 指令及關鍵字？ ①insert ②delete ③where ④order 。" },
+  { "id": 292, "ans": "24", "count": 2, "content": "PHP 執行 mysql_fetch_row() 函數的結果，何者正確？ ①取得欄位數 ②取得單筆完整資料 ③移至最後一筆 ④移至下一筆 。" },
+  { "id": 293, "ans": "14", "count": 2, "content": "Windows 環境下，php.ini 的那些設定協助 email 函式正常運作？ ①SMTP ②sendmail_path ③mail ④smtp_port 。" },
+  { "id": 294, "ans": "12", "count": 2, "content": "JavaScript 中何者是刪除 cookie 的方法？ ①設定 expire 為過期 ②利用 setcookie 忽略參數 ③關閉電腦 ④ 刪除伺服器暫存檔 。" },
+  { "id": 295, "ans": "1234", "count": 4, "content": "有關 PHP 陣列常用的函數敘述，何者正確？ ①count() 計算個數 ②unset() 刪除元素 ③sort() 排序 ④empty() 檢查是否存在 。" },
+  { "id": 296, "ans": "124", "count": 3, "content": "PHP 的陣列敘述，何者正確？ ①以中括號表示 ②註標由 0 起算 ③元素必須相同型態 ④可動態增減個數 。" },
+  { "id": 297, "ans": "1234", "count": 4, "content": "何者是 PHP 的流程控制語法？ ① if…else ②switch…case ③for 迴圈 ④do…while 迴圈 。" },
+  { "id": 298, "ans": "123", "count": 3, "content": "何者是 PHP 的基本資料型態？ ①整數 ②浮點數 ③字串 ④指標 。" },
+  { "id": 299, "ans": "124", "count": 3, "content": "PHP 變數的敘述，何者正確？ ①不可數字開頭 ②大小寫有區分 ③任何英文皆可當變數名稱 ④$ThisIsMyFirstVariable 是合法命名 。" },
+  { "id": 300, "ans": "34", "count": 2, "content": "MariaDB 與 phpMyAdmin 的敘述， 何者正確？ ①匯入相當於備份 ②輸入 localhost 就可管理 ③利用 console 下指令 ④匯出產生 .sql 檔 。" },
+  { "id": 301, "ans": "13", "count": 2, "content": "PHP 的 echo 敘述，何者正確？ ①輸出為 HTML 格式 ②讓電腦發聲 ③與 print 功能相同 ④印出 echo 字串 。" },
+  { "id": 302, "ans": "14", "count": 2, "content": "PHP 程式要在本機網站根目錄執行，何者正確？ ①http://localhost/text.php ④http://127.0.0.1/text.php 。" },
+  { "id": 303, "ans": "124", "count": 3, "content": "網頁中要顯示字串「Hello, world! 」，何者正確？ ① echo('Hello, world!') ②echo'Hello, world!'; ④print 'Hello, world!'; 。" },
+  { "id": 304, "ans": "123", "count": 3, "content": "那些色彩配色不屬於色光的補色配對？ ①紅色與黃色 ②藍色與青色 ③橙色與黃色 ④綠色與洋紅色 。" },
+  { "id": 305, "ans": "12", "count": 2, "content": "影像處理軟體中，CMYK 的說明那些正確？ ①K 表示黑色 ②Y 表示黃色 ③C 表示洋紅色 ④M 表示青色 。" },
+  { "id": 306, "ans": "124", "count": 3, "content": "RGB 值顯示顏色敘述那些正確？ ①(255,0,0) 紅色 ②(0,255,0) 綠色 ③(0,0,255) 紫色 ④(255,255,0) 黃色 。" },
+  { "id": 307, "ans": "34", "count": 2, "content": "何者不為 CSS 的註解語法？ ①//css ②/*css*/ ③④<comment>css</comment> 。" },
+  { "id": 308, "ans": "134", "count": 3, "content": "CSS 屬性表示那些正確？ ①color: rgb(0,0,255); ③font-style: italic; ④font-weight: 600; 。" },
+  { "id": 309, "ans": "12", "count": 2, "content": "HTML 5 內那些方法可直接將 CSS 撰寫於文件內? ①Inline Style ②Embedded Style Sheet ③Linked Style Sheet ④Imported Style Sheet 。" },
+  { "id": 310, "ans": "124", "count": 3, "content": "CSS 自訂類別 .myimage，設計滑鼠移動放大效果，那些敘述不正確？ ①增加 .myimage:movor ②width 要比原來的寬 ③增加 .myimage:hovor ④增加 .myimage:visited 。" },
+  { "id": 311, "ans": "13", "count": 2, "content": "關於 CSS 設定圖片外框效果何者正確？ ①border-width 設定粗細 ③border-style 設定樣式 。" },
+  { "id": 312, "ans": "123", "count": 3, "content": "關於影像平面化之敘述何者不正確？ ①只會平面化目前圖層 ②文字仍然可以編輯 ③可以隨時回復原先架構 ④文字圖層會消失 。" },
+  { "id": 313, "ans": "123", "count": 3, "content": "Photoshop 文字排版名詞敘述較不適當？ ①大寫高度為 Ascender 到 Descender ②字元大小為基線到頂端 ③基線為最大下降深度的線 ④大寫線為最大高度的線 。" },
+  { "id": 314, "ans": "124", "count": 3, "content": "Photoshop 處理圖層時，何種動作無法保留非破壞性編輯？ ①影像重新取樣 ②影像平面化 ④點陣化圖層 。" },
+  { "id": 315, "ans": "234", "count": 3, "content": "Photoshop 提供何種遮色片效果？ ①背景遮色片 ②向量遮色片 ③剪裁遮色片 ④圖層遮色片 。" },
+  { "id": 316, "ans": "12", "count": 2, "content": "HTML Tag 對應關係，那些不正確？ ①HEAD 對應 HTMLHeadingElement ②DIV 對應 HTMLTableDiv Element 。" },
+  { "id": 317, "ans": "1234", "count": 4, "content": "在 document.documentElement 物件中，可合法使用那些方法？ ①appendChild() ②replaceChild() ③insertBefore() ④getAttribute() 。" },
+  { "id": 318, "ans": "123", "count": 3, "content": "在 document.documentElement 物件中，那些方法可產生新的 node？ ①createAttribute() ②createElement() ③createTextNode() ④createImageNode() 。" },
+  { "id": 319, "ans": "123", "count": 3, "content": "在 document.documentElement 物件，可使用那些方法找到元素或元件列？ ①getElementById() ②getElementsByTagName() ③getElementsByClassName() ④getElementByValue() 。" },
+  { "id": 320, "ans": "1234", "count": 4, "content": "在 document.documentElement 物件中，可改變那些內容？ ①HTML content ②CSS styles ③HTML attributes ④event(handlers) 。" },
+  { "id": 321, "ans": "124", "count": 3, "content": "在 HTMLFormElement 物件，可合法使用那些方法及屬性？ ①reset() ②submit() ③getlength() ④name 。" },
+  { "id": 322, "ans": "1234", "count": 4, "content": "在 HTMLImageElement 物件，可合法使用那些屬性？ ①alt ②height ③longDesc ④lowsrc 。" },
+  { "id": 323, "ans": "34", "count": 2, "content": "在 HTMLTableElement 物件，可合法使用那些方法？ ①createTitle() ②createTFooter() ③createTHead() ④insertRow() 。" },
+  { "id": 324, "ans": "1234", "count": 4, "content": "在 HTMLLinkElement 物件，可合法使用那些屬性？ ①hreflang ②media ③type ④charset 。" },
+  { "id": 325, "ans": "123", "count": 3, "content": "在 HTMLSelectElement 物件，可合法使用那些方法及屬性？ ①add() ②remove() ③type ④selectedIndexNodes 。" },
+  { "id": 326, "ans": "123", "count": 3, "content": "在 Element 物件，可合法使用那些方法及屬性？ ①appendChild() ②cloneNode() ③isEqualNode() ④isParentNode() 。" },
+  { "id": 327, "ans": "234", "count": 3, "content": "何種影像格式常使用於網頁畫面？ ①TIFF ②JPG ③GIF ④PNG 。" },
+  { "id": 328, "ans": "134", "count": 3, "content": "何種影像格式不屬於「破壞性壓縮」？ ①TIFF ②JPG ③BMP ④PNG 。" },
+  { "id": 329, "ans": "124", "count": 3, "content": "那些影像格式不能產生動畫及透明效果？ ①TIFF ②JPG ③ GIF ④ BMP 。" },
+  { "id": 330, "ans": "34", "count": 2, "content": "那些影像格式能產生透明效果？ ①BMP ②JPG ③GIF ④PNG 。" },
+  { "id": 331, "ans": "123", "count": 3, "content": "那些是網頁製作軟體？ ①Dreamweaver ②Visual Studio Code ③SharePoint ④MariaDB 。" },
+  { "id": 332, "ans": "234", "count": 3, "content": "Dreamweaver 中網頁樣式不使用那些方式處理？ ① CSS 樣式 ②Java 程式 ③PHP 程式 ④# 符號 。" },
+  { "id": 333, "ans": "234", "count": 3, "content": "PHP 不使用那些符號表示單行註解？ ①// ②? ③& ④$ 。" },
+  { "id": 334, "ans": "123", "count": 3, "content": "那些方式可以用來轉換 PHP 變數的資料型態？ ①使用括弧加上型態名稱 ②使用轉換函數 ③使用 settype 函數 ④使用 dim 。" },
+  { "id": 335, "ans": "123", "count": 3, "content": "PHP 使用那些函數無法將變數型態轉換成字串？ ①intval ②floatval ③doubleval ④strval 。" },
+  { "id": 336, "ans": "123", "count": 3, "content": "PHP 可使用那些語法輸出字串？ ①echo ②print ③printf ④show 。" },
+  { "id": 337, "ans": "234", "count": 3, "content": "PHP 使用那些語法無法輸出字串？ ①echo ② type ③string ④ show 。" },
+  { "id": 338, "ans": "134", "count": 3, "content": "字串中使用 \"\\n\" 語法，在那些語言中會產生斷行效果？ ①C ②PHP ③C++ ④Java 。" },
+  { "id": 339, "ans": "12", "count": 2, "content": "乙太網路功能運作在 OSI 模式的那二層？ ①Physical ②Data link ③Network ④Transport 。" },
+  { "id": 340, "ans": "123", "count": 3, "content": "關於 NIC 之敘述何者正確？ ①連接 PC 到媒體 ②偵測碰撞 ③傳遞訊框給上層 ④在傳送前檢查格式 。" },
+  { "id": 341, "ans": "34", "count": 2, "content": "那些是高速乙太網路的技術？ ①100BASE-5 ②1000BASE-F ③100BASE-FX ④100BASE-TX 。" },
+  { "id": 342, "ans": "12", "count": 2, "content": "關於 Gigabit 乙太網路技術描述何者正確？ ①典型使用為骨幹 ②可用銅線和光纖 ③主要在工作站間 ④運作在 100 Mbps 。" },
+  { "id": 343, "ans": "123", "count": 3, "content": "哪些是傳輸層用來管理主機間分離的資料流？ ①埠號 ②確認號碼 ③序號 ④認證鑰匙 。" },
+  { "id": 344, "ans": "12", "count": 2, "content": "那些是 OSI 傳輸層的主要目的？ ①Flow Control ② End-to-end Connectivity ③Path Determination ④Security Control 。" },
+  { "id": 345, "ans": "12", "count": 2, "content": "關於 127.0.0.1 的敘述何者正確？ ①屬於 A 級範圍 ②保留當作迴路測試 ③多點傳輸測試 ④屬於 B 級 。" },
+  { "id": 346, "ans": "134", "count": 3, "content": "那些為私有 IP 位址？ ①192.168.168.168 ②192.169.169.169 ③172.22.22.22 ④10.66.66.66 。" },
+  { "id": 347, "ans": "123", "count": 3, "content": "乙太網路上發生碰撞，CSMA/CD 的程序？ ①傳輸停止隨機周期 ②到期後檢查閒置嘗試傳送 ③主機持續短時間壅塞傳輸確保偵測 。" },
+  { "id": 348, "ans": "12", "count": 2, "content": "那些設備會延伸碰撞領域？ ①Hub ②Repeater ③Switch ④Bridge 。" },
+  { "id": 349, "ans": "123", "count": 3, "content": "移植到 Gigabit 乙太網路，需考慮項目？ ①NIC 升級 ②交換器升級 ③UTP 測試通 CAT 5e 或 CAT 6 。" },
+  { "id": 350, "ans": "123", "count": 3, "content": "TCP 協定具備那些特徵？ ①強制重傳 ②建立虛擬會談 ③分割並重組區段 ④傳送 IP 錯誤訊息 。" },
+  { "id": 351, "ans": "12", "count": 2, "content": "那些屬於 TCP/IP 的應用層協定？ ①FTP ②SMTP ③TCP ④IP 。" },
+  { "id": 352, "ans": "124", "count": 3, "content": "B 級位址的網路與子網路遮罩那些是有效的設定？ ①255.255.252.0 ②255.255.255.192 ③255.0.0.0 ④255.255.0.0 。" },
+  { "id": 353, "ans": "34", "count": 2, "content": "那些設備會在乙太網路上產生多個碰撞領域？ ①Hub ②NIC ③Switch ④ Router 。" },
+  { "id": 354, "ans": "123", "count": 3, "content": "關於 CSMA/CD 的敘述何者正確？ ①它是媒體存取方法 ②檢查媒體可用 ③同一時間只有一個設備傳輸 。" },
+  { "id": 355, "ans": "12", "count": 2, "content": "那些是採購網路介面卡要考慮的重要特性？ ①網路上使用的媒介 ②電腦使用的系統匯流排 ③安全性 ④軟體 。" },
+  { "id": 356, "ans": "12", "count": 2, "content": "那些是 UDP 和 TCP 共通的特性？ ① 使用埠號 ② 歸類為傳輸層協定 ③確認接收 ④無連結協定 。" },
+  { "id": 357, "ans": "1234", "count": 4, "content": "FTP 與 TFTP 之間的差異？ ①FTP 可互動；TFTP 單向傳輸 ②FTP 有驗證；TFTP 則否 ③FTP 使用 TCP 20,21；TFTP 使用 UDP 69 ④FTP 為一般用途；TFTP 為極簡特殊目的 。" },
+  { "id": 358, "ans": "12", "count": 2, "content": "那些是 TCP/IP 應用層協定？ ①TFTP ②DNS ③TCP ④UDP 。" },
+  { "id": 359, "ans": "12", "count": 2, "content": "何者屬於 B 級 IP 位址的子網路遮罩？ ①255.255.224.0 ②255.255.192.0 ③255.255.0.0 ④255.192.0.0 。" },
+  { "id": 360, "ans": "12", "count": 2, "content": "在網路環境中使用 UTP 纜線優點？ ①便宜 ②容易安裝 ③距離長 ④較不易受雜訊影響 。" },
+  { "id": 361, "ans": "34", "count": 2, "content": "使用光纖佈線代替 UTP 纜線優點？ ①低成本 ②容易安裝 ③距離長 ④較不受外界訊號影響 。" },
+  { "id": 362, "ans": "34", "count": 2, "content": "有線網路佈線需考慮那些因素？ ①作業系統 ②CPU 速度 ③佈線距離 ④傳輸速度 。" },
+  { "id": 363, "ans": "123", "count": 3, "content": "那些可用來當作網路通訊傳輸訊號？ ①光樣式 ②電壓 ③調變電磁波 ④磁化流體波 。" },
+  { "id": 364, "ans": "12", "count": 2, "content": "集線器與交換器敘述正確者？ ①交換器提供更多流通量 ②交換器提供無碰撞環境 ③集線器在第 3 層 ④集線器減少碰撞數目 。" },
+  { "id": 365, "ans": "12", "count": 2, "content": "那些網路設備使用 MAC 位址選擇路徑？ ①Bridge ②Switch ③NIC ④Hub 。" },
+  { "id": 366, "ans": "12", "count": 2, "content": "那些設備用以再生資料訊號，用來延伸區段？ ①Repeater ②Switch Hub ③Router ④Bridge 。" },
+  { "id": 367, "ans": "123", "count": 3, "content": "那些情況發生時需要安裝新的 NIC？ ①NIC 壞掉 ②需要第二個 NIC 時 ③有線改成無線時 ④移動地點時 。" },
+  { "id": 368, "ans": "12", "count": 2, "content": "位元組(Byte)敘述正確者？ ①8 個二進位數群組 ②可當定址單位 ③最小單位 ④範圍 0 到 128 。" },
+  { "id": 369, "ans": "134", "count": 3, "content": "那些是 TCP/IP 模式的分層？ ①應用層 ②實體層 ③網際網路層 ④網路存取層 。" },
+  { "id": 370, "ans": "13", "count": 2, "content": "關於資料鏈結層封裝敘述何者正確？ ①加上表頭和表尾 ③封包包裹成訊框 ④訊框分成區段 。" },
+  { "id": 371, "ans": "123", "count": 3, "content": "那些是量測網路頻寬的單位？ ①Kbps ②Mbps ③Gbps ④Nbps 。" },
+  { "id": 372, "ans": "12", "count": 2, "content": "那些為決定網路流通量的因素？ ①網路拓樸 ②使用者數目 ③密碼種類 ④線直徑 。" },
+  { "id": 373, "ans": "234", "count": 3, "content": "何者不是 Telnet 指令所提供之功能？ ①遠端登入 ②電子郵件服務 ③檔案傳輸服務 ④電傳視訊 。" },
+  { "id": 374, "ans": "23", "count": 2, "content": "何者是「網路」所使用的通訊協定？ ①Ajax ② TCP/IP ③IPX/SPX ④JSP 。" },
+  { "id": 375, "ans": "123", "count": 3, "content": "Dreamweaver 跑馬燈功能可設定項目？ ①速度 ②背景顏色 ③次數 ④動態變更內容 。" },
+  { "id": 376, "ans": "123", "count": 3, "content": "網頁版面設計的方式有那些？ ①div ②iframe ③frame ④meta 。" },
+  { "id": 377, "ans": "123", "count": 3, "content": "何者可作為網頁編輯軟體？ ①SharePoint ②Dreamweaver ③Notepad ④Paint 。" },
+  { "id": 378, "ans": "134", "count": 3, "content": "內容管理系統 (CMS) 何者屬於？ ①XOOPS ②Sleipnir ③Manbo ④PHP-Nuke 。" },
+  { "id": 379, "ans": "234", "count": 3, "content": "何者屬於 TCP/IP 網路模型之應用層協定？ ① ICMP ② SMTP ③ Telnet ④FTP 。" },
+  { "id": 380, "ans": "123", "count": 3, "content": "網頁表單處理程式可以使用何種語言撰寫？ ①ASP ②PHP ③JSP ④FORTRAN 。" },
+  { "id": 381, "ans": "12", "count": 2, "content": "何者同時具備網頁製作及網站管理的功能？ ①Dreamweaver ②SharePoint ③Firework ④Flash 。" },
+  { "id": 382, "ans": "14", "count": 2, "content": "設計網頁表單時，何種控制項為選項之應用？ ①radio ②combobox ③textarea ④checkbox 。" },
+  { "id": 383, "ans": "12", "count": 2, "content": "何種 HTML 語法標籤與文字格式設定有關？ ①<u> ②<b> ③<a> ④<p> 。" },
+  { "id": 384, "ans": "123", "count": 3, "content": "何者為電子郵件的通訊協定？ ①IMAP ②POP ③SMTP ④IPX 。" },
+  { "id": 385, "ans": "14", "count": 2, "content": "何者不是專業的網頁製作軟體？ ①Excel ②Dreamweaver ③php Designer ④PowerPoint 。" },
+  { "id": 386, "ans": "24", "count": 2, "content": "何者是圖形的副檔名？ ①.xlsx ②.png ③.txt ④.jpg 。" },
+  { "id": 387, "ans": "14", "count": 2, "content": "何者是數據通訊的傳輸媒介？ ①同軸電纜 ②數據機 ③基地台 ④光纖 。" },
+  { "id": 388, "ans": "24", "count": 2, "content": "那些是 XML 文件的驗證技術？ ①XSLT ②XML Schema ③XQuery ④DTD 。" },
+  { "id": 389, "ans": "24", "count": 2, "content": "關於 PHP 的描述那些正確？ ①尚無法支援資料庫 ②較新版可使用物件導向 ③只能利用 Windows 系統建置 ④可直接嵌入在 HTML 文件中 。" },
+  { "id": 390, "ans": "124", "count": 3, "content": "關於 PHP 的特色那些正確？ ①開放原始碼 ②嵌入式語言 ③各版本均可利用物件導向 ④能與 MS SQL 結合 。" },
+  { "id": 391, "ans": "234", "count": 3, "content": "關於 PHP 語法那些正確？ ①$tmp=10 ②//為單行註解 ③echo \"字串資料\"; ④$a=$b++; 。" },
+  { "id": 392, "ans": "124", "count": 3, "content": "關於 PHP 變數名稱那些正確？ ①$var ②$myFunction ③$class ④$myBreak 。" },
+  { "id": 393, "ans": "123", "count": 3, "content": "那些是 PHP 程式之流程控制？ ①if…else ②if…else if…else ③do…while ④select…case 。" },
+  { "id": 394, "ans": "124", "count": 3, "content": "關於 HTML 之敘述那些正確？ ①全名為 Hypertext Markup Language ②W3C 組織標準 ③存取資料庫 ④不同廠牌解析結果可能不同 。" },
+  { "id": 395, "ans": "24", "count": 2, "content": "關於 HTML 網頁開發敘述正確？ ①不可利用記事本 ②可用文字編輯軟體修改 ③須事先經過編譯 ④注意圖文智慧財產權 。" },
+  { "id": 396, "ans": "14", "count": 2, "content": "關於 XHTML 標籤屬性敘述正確？ ①名稱與屬性間須至少一個空白 ②屬性名稱大小寫皆可 ③雙引號可以省略 ④屬性間須以空白間隔 。" },
+  { "id": 397, "ans": "23", "count": 2, "content": "關於 HTML 標籤的 color 屬性，正確表示法？ ①color=rgb(128,196,255) ②color=\"#000FF\" ③color=\"green\" ④color=\"#FF0\" 。" },
+  { "id": 398, "ans": "124", "count": 3, "content": "關於 XML 的敘述那些正確？ ①可轉換成 HTML ②基本單位為元素 ③無分英文大小寫 ④有唯一的根元素 。" },
+  { "id": 399, "ans": "123", "count": 3, "content": "HTML 網頁中 <meta> 標籤可設定項目？ ①網頁編碼 ②自動換頁 ③關鍵字 ④資料庫連結 。" },
+  { "id": 400, "ans": "123", "count": 3, "content": "建立網頁表格用到標籤？ ①<table> ②<tr> ③<td> ④<tf> 。" },
+  { "id": 401, "ans": "234", "count": 3, "content": "XHTML 建立網頁框架正確？ ①<frameset cols=\"2:3\"> ②<frameset cols=\"40%\"> ③<frameset cols=\"200,\"> ④<frameset cols=\"2*,3*\"> 。" },
+  { "id": 402, "ans": "123", "count": 3, "content": "JavaScrip t 的基本資料型態？ ①Number ② String ③Boolean ④ Array 。" },
+  { "id": 403, "ans": "123", "count": 3, "content": "CSS 設定段落文字顏色為「藍色」？ ①p{color:#00F;} ②p{color:blue;} ③p{color:rgb(0,0,100%);} ④p{color:rgb(00,00,FF);} 。" },
+  { "id": 404, "ans": "123", "count": 3, "content": "CSS 設定段落文字大小？ ①p{font-size:12px;} ②p{font-size:2em;} ③p{font-size:2;} ④p{font-size:2x-large;} 。" },
+  { "id": 405, "ans": "234", "count": 3, "content": "CSS 設定元件長度，屬於絕對單位？ ①px ②in ③cm ④mm 。" },
+  { "id": 80, "ans": "12", "count": 2, "content": "智慧型手機、平板電腦、GPS 等之作業系統？ ①Android ②iOS ③IBM z/OS ④Windows Server 。" },
+  { "id": 81, "ans": "34", "count": 2, "content": "作業系統敘述錯誤者？ ①macOS 單人多工 ②Linux 多人多工 ③手機使用 Windows 10 ④Windows Server 網路作業系統 。" },
+  { "id": 82, "ans": "34", "count": 2, "content": "關於 Linux 之敘述正確者？ ①美國 AT&T 發展 ②組合語言開發 ③使用者可自行開發作業系統 ④可提供圖形化界面 。" },
+  { "id": 83, "ans": "123", "count": 3, "content": "何者屬於 UNIX-like 的作業系統？ ①Solaris ②FreeBSD ③SCO UNIX ④DOS 。" },
+  { "id": 84, "ans": "24", "count": 2, "content": "何者可用來作為電子商務網路伺服器系統？ ①Safari ②UNIX ③ Opera ④Mac OS X Server 。" },
+  { "id": 85, "ans": "13", "count": 2, "content": "網際網路中常見服務項目？ ①Facebook ②RFID ③Weibo ④NFC 。" },
+  { "id": 86, "ans": "1234", "count": 4, "content": "何者是智慧型手機所採用之作業系統？ ①Android ②Samdroid ③BlackBerry OS ④iOS 。" },
+  { "id": 87, "ans": "123", "count": 3, "content": "何者比較不適合安裝在智慧型手機？ ①Windows Server ②UNIX ③macOS ④iOS 。" },
+  { "id": 88, "ans": "23", "count": 2, "content": "Windows 10 和 Ubuntu 比較何者有誤？ ①具備圖形介面 ②皆免費 ③皆屬 UNIX-like ④皆可用中文 。" },
+  { "id": 89, "ans": "13", "count": 2, "content": "作業系統之敘述何者有誤？ ①Windows Server 適用手機 ②macOS 最早採用 GUI ③Solaris 原始碼公開且免費 ④UNIX 適合多人多工 。" },
+  { "id": 90, "ans": "24", "count": 2, "content": "Linux 與 UNIX 之敘述何者有誤？ ①多人多工 ②組合語言開發 ③Live CD 可不裝硬碟 ④可直接裝 Microsoft 軟體 。" },
+  { "id": 91, "ans": "12", "count": 2, "content": "何者不屬於作業系統(Operating System)？ ①NFC ②BIOS ③UNIX ④Android 。" },
+  { "id": 92, "ans": "124", "count": 3, "content": "關於 Linux 作業系統之敘述正確者？ ①芬蘭 Torvalds 設計 ②提供優異圖形介面 ③單人多工 ④跨平台能力優 。" },
+  { "id": 93, "ans": "14", "count": 2, "content": "何者可提供雲端記事本的服務？ ①Evernote ②Mixest ③ Photovisi ④ WeHeartit 。" },
+  { "id": 94, "ans": "1234", "count": 4, "content": "何者可提供雲端服務？ ①HiCloud ②Gmail ③Google Documents ④Dropbox 。" },
+  { "id": 95, "ans": "234", "count": 3, "content": "關於網路伺服器之敘述正確者？ ①DNS 具有防火牆功能 ②FTP 提供匿名下載 ③Proxy 具快取功能 ④Print Server 共用印表機 。" },
+  { "id": 96, "ans": "134", "count": 3, "content": "關於 Web 2.0 之敘述正確者？ ①強調互動 ②網路速度更高 ③參與意願 ④網站內容有所貢獻 。" },
+  { "id": 97, "ans": "1234", "count": 4, "content": "關於 CMS 之敘述正確者？ ①發佈和管理系統 ②可下載模組外掛 ③通常與資料庫連結 ④Content Management System 。" },
+  { "id": 98, "ans": "124", "count": 3, "content": "何者的功用和 Skype 類似，提供線上語音？ ①WhatsApp ②Instagram ③Outlook ④LINE 。" },
+  { "id": 99, "ans": "123", "count": 3, "content": "何者屬於網頁瀏覽器？ ①Google Chrome ②Apple Safari ③Firefox ④Adobe Reader 。" },
+  { "id": 100, "ans": "123", "count": 3, "content": "關於網際網路服務敘述正確？ ①Yahoo!拍賣為主從式 ②FTP 下載為主從式 ③Mymusic 為點對點式 ④台鐵訂票為點對點式 。" },
+  { "id": 101, "ans": "24", "count": 2, "content": "提供公開溝通平台，即時發表看法或回答問題？ ①HTML ②BBS ③E-mail ④Facebook 。" },
+  { "id": 102, "ans": "124", "count": 3, "content": "何種軟體讓使用者在網路上即時傳遞訊息？ ① LINE ② Instagram ③DHCP ④WhatsAPP 。" },
+  { "id": 103, "ans": "234", "count": 3, "content": "關於電腦病毒敘述正確？ ①複製無毒檔到隨身碟不會中毒 ②中毒檔通常變大 ③檔案型隨著執行載入記憶體 ④開機型侵入記憶體 。" },
+  { "id": 104, "ans": "134", "count": 3, "content": "關於預防電腦病毒敘述正確？ ①常做備份 ②隨身碟與他人交流軟體 ③掃毒程式檢查 ④執行偵毒程式 。" },
+  { "id": 105, "ans": "24", "count": 2, "content": "關於電腦病毒敘述錯誤？ ①程式無法執行 ②一定具有複製能力 ③瀏覽網頁可能中毒 ④中毒後一定立刻發作 。" },
+  { "id": 106, "ans": "12", "count": 2, "content": "何者是一般電腦病毒特性？ ①駐留主記憶體 ②隱密攻擊能力 ③重開機自動消失 ④不具自我拷貝 。" },
+  { "id": 107, "ans": "123", "count": 3, "content": "關於電腦病毒敘述正確？ ①開機、檔案、混合型 ②侵入、潛伏、發病、傳佈 ③防治策略不複製不明隨身碟 ④讀取中毒隨身碟不會被感染 。" },
+  { "id": 108, "ans": "134", "count": 3, "content": "何者是典型特洛伊木馬(Trojan) 特徵？ ①竊取資料 ②一定自我複製 ③不會感染其他檔案 ④開啟通訊埠 。" },
+  { "id": 109, "ans": "234", "count": 3, "content": "關於 Web 2.0 之敘述正確？ ①瀏覽器版本 ②維基百科採用 ③WWW 做為平台 ④資源共享及免費 。" },
+  { "id": 110, "ans": "12", "count": 2, "content": "何種瀏覽器應用在 iPhone、Mac PC 上？ ①Safari ②Opera ③Tizen ④Samdroid 。" },
+  { "id": 111, "ans": "24", "count": 2, "content": "提供數位照片儲存分享方案之線上服務？ ①CSS ②Facebook ③RSS ④Flickr 。" },
+  { "id": 112, "ans": "1234", "count": 4, "content": "關於資訊安全敘述正確？ ①安裝修補程式 ②使用 P2P 增加中毒機會 ③重要資料加密 ④定期異地備份 。" },
+  { "id": 113, "ans": "1234", "count": 4, "content": "關於電腦病毒敘述正確？ ①蠕蟲不傷害硬體 ②開機型感染啟動磁區 ③木馬造成無故當機 ④定期更新病毒碼 。" },
+  { "id": 114, "ans": "23", "count": 2, "content": "關於平板電腦敘述錯誤？ ①體積介於筆電手機 ②不具觸控功能 ③僅能搭配 Android ④具無線通訊 。" },
+  { "id": 115, "ans": "13", "count": 2, "content": "何者是微型伺服器(Microserver)平台？ ①Denlow ②Facebook ③Edisonville ④Line 。" },
+  { "id": 116, "ans": "234", "count": 3, "content": "存取控制清單（Access Control List）儲存內容？ ①註冊值 ②NTFS 資料夾 ③Active Directory 使用者 ④登入權限 。" },
+  { "id": 117, "ans": "12", "count": 2, "content": "何者是作業系統名稱？ ①LINUX ②macOS ③HTTP ④BBS 。" },
+  { "id": 118, "ans": "13", "count": 2, "content": "何者不具圖形化介面作業系統？ ① Word ②GNU/Linux ③ DOS ④ Windows 10 。" },
+  { "id": 119, "ans": "12", "count": 2, "content": "專有名詞中英對照正確？ ①圖形使用者介面：GUI ②開放原始碼：Open Source ③網路作業系統：OS ④電子郵件：WWW 。" },
+  { "id": 120, "ans": "123", "count": 3, "content": "使用 Windows 網路分享資源？ ①電腦檔案 ②印表機 ③資料夾 ④記憶體 。" },
+  { "id": 121, "ans": "14", "count": 2, "content": "何者不具備動態連結函式庫及動態資料交換功能？ ①IDE ②OCX ③OLE ④OEM 。" },
+  { "id": 122, "ans": "123", "count": 3, "content": "處理程式執行順序排程(Process Scheduling) 方法？ ① First In First Out ② Shortest ③ Round Robin ④ Race Condition 。" },
+  { "id": 123, "ans": "124", "count": 3, "content": "關於作業系統敘述正確？ ①MS-DOS 單人單工 ②Windows10 單人多工 ③UNIX 單人多工 ④Linux 多人多工 。" },
+  { "id": 124, "ans": "134", "count": 3, "content": "智慧型手機看 YouTube 及玩 Facebook 作業系統？ ①iOS ②Windows Server ③Symbian OS ④Android 。" },
+  { "id": 69, "ans": "34", "count": 2, "content": "關於網路安全敘述錯誤？ ①謀取不法利益 ②惡意軟體藉由網路散播 ③阻斷服務是誘騙個資手段 ④入侵偵測防止連上惡意網站 。" },
+  { "id": 70, "ans": "134", "count": 3, "content": "關於資訊安全敘述正確？ ①備份檔案 ②不收陌生郵件即可避毒 ③入侵偵測偵測外部威脅 ④防火牆無法防止內部不肖員工 。" },
+  { "id": 71, "ans": "24", "count": 2, "content": "關於防火牆敘述錯誤？ ①丟棄不符規則封包 ②無法防止病毒從特定埠入侵 ③硬體或軟體完成 ④搜尋已感染病毒並掃除 。" },
+  { "id": 72, "ans": "123", "count": 3, "content": "何者是網路安全威脅？ ①個資外洩 ②駭客入侵 ③ 網路釣魚 ④ 網路團購 。" },
+  { "id": 73, "ans": "24", "count": 2, "content": "何者不是防毒軟體？ ① Avast! ②Twitter ③Kaspersky ④ Partition Magic 。" },
+  { "id": 74, "ans": "1234", "count": 4, "content": "選用軟體防火牆應考慮重點？ ①主機作業系統 ②應用系統衝突 ③穩定度 ④防火牆效能 。" },
+  { "id": 1, "ans": "1", "count": 1, "content": "國家通訊傳播委員會( NCC)頒訂網站無障礙規範 2.0 版共分為幾個檢測等級？ ①3 個 ②4 個 ③5 個 ④6 個 。" },
+  { "id": 2, "ans": "4", "count": 1, "content": "國家通訊傳播委員會( NCC)頒訂網站無障礙規範 2.0 版不含何檢測等級？ ①A ②A+ ③AA ④AAA 。" },
+  { "id": 3, "ans": "3", "count": 1, "content": "色彩配色有分加色及減色混合，色光的三原色為何？ ①黃、白、紅 ②紅、黃、綠 ③紅、綠、藍 ④紅、黃、紫 。" },
+  { "id": 4, "ans": "2", "count": 1, "content": "色彩的色相、明度及彩度合稱為何？ ①三原色 ②三屬性 ③三色系 ④三色立體 。" },
+  { "id": 5, "ans": "3", "count": 1, "content": "色彩屬性的飽和程度或純度稱之為何？ ①色相 ② 明度 ③彩度 ④ 色環 。" },
+  { "id": 6, "ans": "2", "count": 1, "content": "色彩屬性的明暗程度稱之為何？ ①色相 ②明度 ③彩度 ④色調 。" },
+  { "id": 7, "ans": "2", "count": 1, "content": "色彩三屬性進行有系統地排列，形成三度空間的結構稱之為何？ ①色環 ②色立體 ③色相 ④三原色 。" },
+  { "id": 8, "ans": "3", "count": 1, "content": "色彩配色中，色光混色又稱之為何？ ①平均混色 ②互補混色 ③加法混色 ④減法混色 。" },
+  { "id": 9, "ans": "4", "count": 1, "content": "色彩配色中，色料混色又稱之為何？ ①平均混色 ②互補混色 ③加法混色 ④減法混色 。" },
+  { "id": 10, "ans": "2", "count": 1, "content": "會讓人有溫暖感覺的顏色為何？ ①藍色 ②橙色 ③紫色 ④綠色 。" },
+  { "id": 11, "ans": "4", "count": 1, "content": "會讓人有寒冷感覺的顏色為何？ ①紅色 ②橙色 ③黃色 ④藍色 。" },
+  { "id": 12, "ans": "2", "count": 1, "content": "影像處理軟體中，影像圖檔的色彩表示有 RGB 及 CMYK 色系，其中 CMYK 的「Y」表示為何？ ①黑色 ②黃色 ③青色 ④洋紅色 。" },
+  { "id": 13, "ans": "3", "count": 1, "content": "電腦文字的字型有很多種，Post Script 字型屬於何種？ ①點陣字型 ②螢幕字型 ③向量字型 ④描述字型 。" },
+  { "id": 14, "ans": "1", "count": 1, "content": "影像處理軟體中，運用色彩選擇工具取得 RGB 值為(0,0,0)， 其顯示的顏色為何？ ①黑色 ②白色 ③灰色 ④紅色 。" },
+  { "id": 15, "ans": "1", "count": 1, "content": "256 色的 GIF 圖檔，使用多少位元(bits) 來表示索引？ ①8 ②16 ③24 ④32 。" },
+  { "id": 16, "ans": "3", "count": 1, "content": "全彩的圖片每個像素至少使用多少位元(bits)來表示？ ①8 ②16 ③24 ④32 。" },
+  { "id": 17, "ans": "1", "count": 1, "content": "在設計幾何上，點的絕對定義為何？ ①有位置 ②有長度 ③有大小 ④有寬度 。" },
+  { "id": 18, "ans": "1", "count": 1, "content": "設計美學中，設計構成要素最小單位為何？ ①點 ②線 ③面 ④體 。" },
+  { "id": 19, "ans": "4", "count": 1, "content": "設計美學中，圓、橢圓及拋物線為何種曲線？ ①幾何直線 ②自由曲線 ③徒手曲線 ④幾何曲線 。" },
+  { "id": 20, "ans": "3", "count": 1, "content": "設計原理中，以中央設一縱軸，而左右或上下完全同形，稱之為何？ ①律動 ②漸層 ③對稱 ④對比 。" },
+  { "id": 21, "ans": "1", "count": 1, "content": "何種網頁設計技術可使頁面具有統一的外觀？ ①CSS ②URL ③HTML ④DHTML 。" },
+  { "id": 22, "ans": "3", "count": 1, "content": "數位影像解析度的單位 ppi 是何種英文的縮寫？ ① Pica Per Inch ② Point Per Inch ③Pixel Per Inch ④Pixel Per Image 。" },
+  { "id": 23, "ans": "1", "count": 1, "content": "何者不是國家通訊傳播委員會(NCC)頒訂網站無障礙規範 2.0 版「可感知原則」的指引？ ①防痙攣 ②替代文字 ③時序媒體 ④可辨識 。" },
+  { "id": 24, "ans": "1", "count": 1, "content": "何者不是國家通訊傳播委員會(NCC)頒訂網站無障礙規範 2.0 版「可操作原則」的指引？ ①替代文字 ②鍵盤可操作 ③充足時間 ④可導覽 。" },
+  { "id": 25, "ans": "1", "count": 1, "content": "何者不是國家通訊傳播委員會(NCC)頒訂網站無障礙規範 2.0 版「可理解原則」的指引？ ①相容性 ②可讀性 ③可預期性 ④輸入協助 。" },
+  { "id": 26, "ans": "4", "count": 1, "content": "目前 TCP 已定義埠（Well-Known Port）之分布範圍為下列何者？ ①0 ～ 127 ②0 ～255 ③0 ～511 ④0 ～1023 。" },
+  { "id": 27, "ans": "3", "count": 1, "content": "關於 HTML 與 XML 之敘述何者正確？ ①XML 主要用來加強 HTML 之網頁編排能力 ② XML 標籤可與 HTML 標籤混合使用 ③XML 具有可擴充之特性 ④XML 文件之結果可直接在瀏覽器中顯示出來 。" },
+  { "id": 28, "ans": "1", "count": 1, "content": "Web 架構可分為伺服端( Server Site) 與客戶端( Client Site)，其兩者間的通訊係透過何種協定來完成？ ①HTTP ②FTP ③TELNET ④SMTP 。" },
+  { "id": 29, "ans": "3", "count": 1, "content": "何者可用來控制網頁顯示資料的格式？ ① Script ②XML ③CSS ④CGI 。" },
+  { "id": 30, "ans": "3", "count": 1, "content": "何者最不適合作為網頁編輯器？ ①Dreamweaver ②BlueGriffon ③Cool Editor ④Visual Studio Code 。" },
+  { "id": 31, "ans": "2", "count": 1, "content": "何者為 CSS 之全名？ ① College Scholarship Service ②Cascading Style Sheets ③Communication Style Sheets ④Computer Serial Sheets 。" },
+  { "id": 32, "ans": "3", "count": 1, "content": "首頁設計準則中，為了要準確傳達網站設計的意圖，較正確之概念為何？ ①首頁中涵蓋一段詳實完整的副標來說明網站或公司性質 ②首頁中 使用艱澀性的標題文字來吸引瀏覽者目光 ③首頁左上方放置組織名稱或標誌比放置在右下方來得恰當 ④為了讓資訊透明化，內部資料亦應開誠佈 公地公布在網站中 。" },
+  { "id": 33, "ans": "3", "count": 1, "content": "企業首頁設計準則中，內文的書寫要領，較不正確之概念為何？ ①不使 用艱澀的成語或行銷術語 ② 儘量避免內文重複 ③為了隱密性，內部機密 資料可公布在網站較不明顯的地方 ④若網站無法清楚地顯示營利來源， 就必須說明如何創造企業價值 。" },
+  { "id": 34, "ans": "4", "count": 1, "content": "對於一個 Well- formed 之 XML 文件的敘述何者不正確？ ①有開始標籤(Tag)必定要有結束標籤，否則要用空標籤 ②各組標籤之間不可交錯 ③至 少要具備 DTD 或 XML Schema ④屬性值可加可不加引號 。" },
+  { "id": 35, "ans": "2", "count": 1, "content": "關於 XML 文件的設計目標何者不正確？ ①可直接在網路上使用 ②目前 尚無法運用在應用程式中 ③ XML 文件的程式應讓設計者容易撰寫 ④XML 文件應讓人直接閱讀，並能清楚的被理解 。" },
+  { "id": 36, "ans": "3", "count": 1, "content": "何者是 XML 文件的資料查詢語言？ ①Query ② jQuery ③XQuery ④SQL 。" },
+  { "id": 37, "ans": "2", "count": 1, "content": "Windows 作業系統桌面上的捷徑敘述何者正確？ ①是該程式的一部份不 可刪除 ②是一個連結用的檔案，遺失可以再建立 ③是視窗系統中的重要 物件，不可被破壞 ④是程式主體不可刪除 。" },
+  { "id": 38, "ans": "2", "count": 1, "content": "要移除在 Windows 作業系統中的套裝軟體，要如何處理最適當？ ① 直接 刪除該套裝軟體的資料夾 ② 利用控制台的「新增/移除程式」或該套裝軟 體的反安裝程式 ③刪除桌面上的捷徑即可 ④ 刪除程式集中的選項即可 。" },
+  { "id": 39, "ans": "3", "count": 1, "content": "要離開 Windows 作業系統並關機， 何種方式才為正確操作方式？ ①按 PC 上的 Reset 鍵 ②關閉 PC 的插座電源 ③使用開始功能表的關機功能 ④ 拔掉電源插頭 。" },
+  { "id": 40, "ans": "1", "count": 1, "content": "在 Windows 作業系統中，按什麼鍵可以把目前的螢幕畫面擷取下來？ ①Print Screen 鍵 ②Pause Break 鍵 ③Insert 鍵 ④Wake 鍵 。" },
+  { "id": 41, "ans": "1", "count": 1, "content": "在 Windows 作業系統中，如何使用鍵盤在應用程式之間切換？ ①Alt+Tab 鍵 ②靠上面 12 個功能鍵 ③利用右邊數字鍵 ④按亮 Scroll Lock 燈 。" },
+  { "id": 42, "ans": "2", "count": 1, "content": "在 Windows 作業系統中，欲結束命令提示字元視窗，可執行那一個命令 或按鍵？ ①quit ②exit ③Alt+Enter ④Esc 。" },
+  { "id": 43, "ans": "3", "count": 1, "content": "如何才能讓鍵盤右邊的數字鍵順利輸出數字？ ①使用[Shift]鍵切換 ②使用[Caps Lock]鍵切換 ③使用[Num Lock]鍵切換 ④使用[ Scroll Lock] 鍵切 換 。" },
+  { "id": 44, "ans": "3", "count": 1, "content": "相同的圖片在那一個螢幕解析度中看起來最小？ ①800 ×600 ②640 ×480 ③1280 ×960 ④1024 ×768 。" },
+  { "id": 45, "ans": "4", "count": 1, "content": "圖形介面的作業環境中，何種色彩設定最不可能使用？ ①8 bits 的 256 色 ②24 bits 的全彩 ③16 bits 的高彩 ④4 bits 的 16 色 。" },
+  { "id": 46, "ans": "1", "count": 1, "content": "印表機買回來插好連接線和電源後不能正常使用，其原因最可能為何？ ①還要安裝驅動程式 ②印表機太好 ③印表機太差 ④等級不合 。" },
+  { "id": 47, "ans": "4", "count": 1, "content": "在 Windows 作業系統中，若在視窗的標題欄上連按滑鼠左鍵二下， 可完成那一個操作？ ①將視窗最小化 ②移動視窗位置 ③關閉視窗 ④將視窗 最大化或還原成原來大小 。" },
+  { "id": 48, "ans": "1", "count": 1, "content": "資料庫系統包含那四個主要元件？ ①資料、軟體、硬體、使用者 ②資料、 軟體、硬體、管理者 ③ 資料、軟體、使用者、管理者 ④軟體、硬體、使 用者、管理者 。" },
+  { "id": 49, "ans": "3", "count": 1, "content": "資料庫系統中的使用者操作介面由何者負責撰寫？ ①資料庫設計者 ② 資料庫管理者 ③應用程式設計者 ④一般使用者 。" },
+  { "id": 50, "ans": "2", "count": 1, "content": "何種架構的資料庫是將資料以表格的方式儲存， 並利用表格之間的關聯 性來查詢相關資料？ ①階層式資料庫 ②關聯式資料庫 ③表格式資料庫 ④物件導向式資料庫 。" },
+  { "id": 51, "ans": "4", "count": 1, "content": "何種資料庫的架構是將管理及存取資料的工作集中由大型主機管理， 使 用者端只能從大型主機中取得，並無任何處理的能力？ ①單機架構 ②主 從式架構 ③分散式架構 ④大型主機/終端機架構 。" },
+  { "id": 52, "ans": "3", "count": 1, "content": "何者不是資料庫管理系統應具備的基本功能？ ①資料定義 ②資料處理 ③儲存資料 ④效能維護 。" },
+  { "id": 53, "ans": "2", "count": 1, "content": "要在資料庫中新增一個欄位來儲存同學的姓名， 則應該要將資料設定為 何種類型？ ①查閱精靈 ②文字 ③超連結 ④備忘 。" },
+  { "id": 54, "ans": "2", "count": 1, "content": "數字資料的範圍介於-100 到 100 之間，則選擇何種數字型態較適合？ ①位元組 ②整數 ③長整數 ④小數 。" },
+  { "id": 55, "ans": "2", "count": 1, "content": "欲加快資料搜尋及排序的速度，可在資料表中經常搜尋或排序的欄位上做何種設定？ ①目錄 ②索引 ③查詢 ④標記 。" },
+  { "id": 56, "ans": "3", "count": 1, "content": "取得 Session 資料變數的 PHP 指令為何？ ①$GLOBALS ②$_SERVER ③$_SESSION ④$_COOKIE 。" },
+  { "id": 57, "ans": "1", "count": 1, "content": "在 PHP 程式中新增 Cookie 資料內容時，expire 參數的單位為何？ ①sec (秒) ②min(分) ③msec(毫秒) ④day(天) 。" },
+  { "id": 58, "ans": "2", "count": 1, "content": "PHP 新增 Cookie 時使用的內建函數為何？ ①getcookie() ②setcookie() ③addcookie() ④creatcookie() 。" },
+  { "id": 59, "ans": "4", "count": 1, "content": "PHP 程式中，除了$_COOKIE 外，還可存取 Cookie 內容資料者為何？ ①$_SESSION ②$_COOKIE ③$GETCOOKIE ④$HTTP_COOKIE_VARS[] 。" },
+  { "id": 60, "ans": "1", "count": 1, "content": "Cookie 變數的儲放位置為何？ ①Client Side ②Server Side ③ISP ④Proxy 。" },
+  { "id": 61, "ans": "1", "count": 1, "content": "色彩的三屬性是依據光波何種特性來區別色相？ ①波長之長短 ②反射率之高低 ③振幅之高低差 ④折射率之高低 。" },
+  { "id": 62, "ans": "2", "count": 1, "content": "色彩的三屬性中，何者是依據光波反射率之高低區別色彩？ ①色相 ②明度 ③彩度 ④色系 。" },
+  { "id": 63, "ans": "3", "count": 1, "content": "色彩的三屬性中，何者是依據光波本身振幅之高低差區別色彩？ ①色相 ②明度 ③彩度 ④色系 。" },
+  { "id": 64, "ans": "1", "count": 1, "content": "色彩學中常用的專有名詞 Hue 所指為何？ ①色相 ②明度 ③彩度 ④色調。" },
+  { "id": 65, "ans": "3", "count": 1, "content": "色彩學中常用的專有名詞 Chroma 所指為何？ ①色相 ②明度 ③彩度 ④色立體 。" },
+  { "id": 66, "ans": "2", "count": 1, "content": "色彩學中常用的專有名詞 Value 所指為何？ ①彩度 ②明度 ③色相 ④色立體 。" },
+  { "id": 67, "ans": "3", "count": 1, "content": "運用 RGB 色光調色時，紅色加藍色結果為何？ ①綠色 ②咖啡色 ③洋紅色 ④黃色 。" },
+  { "id": 68, "ans": "3", "count": 1, "content": "RGB 色光中藍色的補色為何？ ①青色 ②洋紅色 ③黃色 ④橙色 。" },
+  { "id": 69, "ans": "1", "count": 1, "content": "RGB 色光中紅色的補色為何？ ①青色 ②洋紅色 ③黃色 ④橙色 。" },
+  { "id": 70, "ans": "2", "count": 1, "content": "色彩調色時，依純白及純黑兩色不同比例配出不同程度的灰階顏色，此種配色方式依據的屬性為何？ ①色相 ②明度 ③彩度 ④對比 。" },
+  { "id": 71, "ans": "2", "count": 1, "content": "運用前進色與後退色之配色技巧，使版面產生立體感，那一個敘述較不恰當？ ①明度高的色彩較有前進感 ②寒色色彩較有前進感 ③紅色色系較有前進感 ④在黑色背景中，黃色與青色並列時，黃色會感覺較前面 。" },
+  { "id": 72, "ans": "2", "count": 1, "content": "影像處理軟體中，要提高黑白圖片的對比， 需調整圖片之何種數值？ ①亮度 ②反差 ③彩度 ④色相 。" },
+  { "id": 73, "ans": "3", "count": 1, "content": "影像處理軟體中，影像圖檔的色彩表示有 RGB 及 CMYK 色系， 其中 CMYK 的「C」表示為何？ ①黑色 ②黃色 ③青色 ④洋紅色 。" },
+  { "id": 74, "ans": "4", "count": 1, "content": "影像處理軟體中，影像圖檔的色彩表示有 RGB 及 CMYK 色系， 其中 CMYK 的「M」表示為何？ ①黑色 ②黃色 ③青色 ④洋紅色 。" },
+  { "id": 75, "ans": "2", "count": 1, "content": "兩個相同的禮盒，分別用鮮黃色及暗綠色包裝紙包裝，感覺上用鮮黃色紙包裝的禮盒較輕，其主要是因為色彩的那一個屬性不同所呈現的結果？ ①彩度 ②明度 ③色相 ④濃度 。" },
+  { "id": 76, "ans": "2", "count": 1, "content": "影響色彩輕重感覺最主要的屬性為何？ ①色相 ②明度 ③彩度 ④濃度 。" },
+  { "id": 77, "ans": "3", "count": 1, "content": "影像處理軟體中，運用色彩選擇工具取得 RGB 值為(128 ,128 ,128 )，其顯示的顏色為何？ ①淡藍色 ②淡黃色 ③灰色 ④淡紅色 。" },
+  { "id": 78, "ans": "2", "count": 1, "content": "搭配明視度最高之色彩為何？ ①綠底黃字 ②黑底黃字 ③紅底橙字 ④黃底白字 。" },
+  { "id": 79, "ans": "1", "count": 1, "content": "明度最高之純色為何？ ①黃色 ②橙色 ③紅色 ④藍色 。" },
+  { "id": 80, "ans": "4", "count": 1, "content": "明度最低之純色為何？ ①黃色 ②橙色 ③紅色 ④藍色 。" },
+  { "id": 81, "ans": "2", "count": 1, "content": "會讓人有輕快感覺之色彩為何？ ①棗紅色 ②明黃色 ③墨綠色 ④藏青色" },
+  { "id": 82, "ans": "3", "count": 1, "content": "會讓人有較沉重感覺之色彩為何？ ①天藍色 ②翠綠色 ③藏青色 ④粉紅色 。" },
+  { "id": 83, "ans": "2", "count": 1, "content": "平面上兩條粗細不同、長度相等的線，其視覺效果為何？ ①粗線感覺較長 ②細線感覺較長 ③一樣長 ④不一定 。" },
+  { "id": 84, "ans": "1", "count": 1, "content": "平面上有兩個相等的圓，分別被大小不同的圓包圍時，其大圓內的圓視覺效果為何？ ①較小 ②較大 ③一樣 ④變形 。" },
+  { "id": 85, "ans": "1", "count": 1, "content": "設計美學中，何者不是線的特質？ ①體積 ②粗細 ③方向 ④角度 。" },
+  { "id": 86, "ans": "2", "count": 1, "content": "設計美學中，自由曲線時視覺上通常具有何種感覺？ ① 工整 ②活潑 ③單調 ④刻板 。" },
+  { "id": 87, "ans": "3", "count": 1, "content": "設計美學中，斜角方向的線較會引起何種心理效果？ ① 權威 ②靜寂 ③動態 ④呆板 。" },
+  { "id": 88, "ans": "4", "count": 1, "content": "設計原理中，點置於何處最穩定且具有放射的力量？ ① 上方 ②下方 ③左方 ④中央 。" },
+  { "id": 89, "ans": "4", "count": 1, "content": "設計美學中，「萬綠叢中一點紅」及「鶴立雞群」是何種表現？ ①比例②調合 ③平衡 ④對比 。" },
+  { "id": 90, "ans": "4", "count": 1, "content": "在美的形式原理中，對稱不具何種特性？ ① 上下 ②旋轉 ③放射 ④ 律動 。" },
+  { "id": 91, "ans": "2", "count": 1, "content": "CSS 語法定義新的 class 樣式名稱，其前面須加上何種符號？ ①& ②. ③？④# 。" },
+  { "id": 92, "ans": "3", "count": 1, "content": "CSS 語法「mycss: hover{color: # 0000 FF;}」表示該超連結文字做何種操作會讓超連結文字變成藍色？ ①滑鼠左鍵按下且未放開時 ②滑鼠游標離開時 ③滑鼠游標移到該連結上 ④滑鼠游標點選連結後 。" },
+  { "id": 93, "ans": "1", "count": 1, "content": "何種 CSS 語法可設定字體顏色的屬性？ ①color ② text-color ③font-color④foreground-color 。" },
+  { "id": 94, "ans": "2", "count": 1, "content": "CSS 屬性何者可設定英文字首為大寫？ ①text-indent: capitalize; ②text-transform: capitalize; ③text-decoration: capitalize; ④CSS 無法做到 。" },
+  { "id": 95, "ans": "1", "count": 1, "content": "CSS 區塊模型(Box Model)是用來描述一個方型元素的結構，何種屬性不包含在區塊模型中？ ①size ②margin ③padding ④border 。" },
+  { "id": 96, "ans": "4", "count": 1, "content": "何者不是 HTML 5 文件內加入 CSS 的方法？ ① Embedded Style Sheet ②Imported Style Sheet ③Linked Style Sheet ④Browser's Own Style Sheet 。" },
+  { "id": 97, "ans": "1", "count": 1, "content": "HTML 5 文件內加入 CSS，何種樣式被套用的順序最優先？ ①Inline Style ②Embedded Style Sheet ③ Linked Style Sheet ④Imported Style Sheet 。" },
+  { "id": 98, "ans": "3", "count": 1, "content": "關於 CSS 之敘述何者正確？ ①Embedded Style Sheet 是將 CSS 程式碼與HTML 程式碼合併寫在一起 ②Inline Style 是將 CSS 程式碼寫在<head> 標籤內 ③Linked Style Sheet 是透過<link>標籤告知瀏覽器去載入一個外部連結的樣式檔 ④Imported Style Sheet 是當 HTML 文件內的標籤需要格式設定時，瀏覽器才會向所指定的樣式檔載入樣式 。" },
+  { "id": 99, "ans": "2", "count": 1, "content": "何種 CSS 語法可使網頁捲動時，背景圖案會跟著移動？ ① {background-attachment: move;} ② {background-attachment: scroll;} ③ {background-image: scroll;} ④{background-repeat: repeat;} 。" },
+  { "id": 100, "ans": "3", "count": 1, "content": "何種 CSS 語法屬性可設定樣式表之內容與邊框的留白範圍？ ①margin ②border ③padding ④blank 。" },
+  { "id": 101, "ans": "2", "count": 1, "content": "何種 CSS 語法屬性可設定樣式表的邊界？ ①border ②margin ③padding④form 。" },
+  { "id": 102, "ans": "4", "count": 1, "content": "一數位影像檔，影像尺寸 6 ×4 英吋，解析度為 150ppi，則其像素矩陣為多少像素？ ①6 ×4 ②24 ×150 ③640 ×480 ④900 ×600 。" },
+  { "id": 103, "ans": "1", "count": 1, "content": "Photoshop 中使用矩形或圓形選取工具拖曳選取區域時，搭配鍵盤中的那一個按鍵可繪出[正方形]或[正圓形] 的選取區域？ ①Shift ②Alt ③Space④Ctrl 。" },
+  { "id": 104, "ans": "4", "count": 1, "content": "Photoshop 中使用那一種工具能自動消除照片中的紅眼狀況？ ①修復筆刷工具 ②汙點修復筆刷工具 ③濾鏡工具 ④紅眼工具 。" },
+  { "id": 105, "ans": "2", "count": 1, "content": "Photoshop 中欲將一個原先用於印刷用途的影像檔案( 規格：影像尺寸 3 x3 英吋，解析度 350 ppi)，在尺寸不變的條件下， 改為網頁展示用， 何種的操作較適當？ ①將解析度改為 72ppi 時，且影像不重新取樣 ②將解析度改為 72ppi 時，且影像重新取樣 ③將解析度改為 350ppi 時，且影像重新取樣 ④將解析度改為 350ppi 時，且影像不重新取樣 。" },
+  { "id": 106, "ans": "2", "count": 1, "content": "Photoshop 文字排版的相關名詞中， 關於「均線( Mean Line) 」的敘述何者較適當？ ①介於基線( Base Line)與下降線(Descender Line) 之間 ② 代表小寫字母高度的線 ③安放所有字元的基準線 ④代表大寫字母高度的線 。" },
+  { "id": 107, "ans": "4", "count": 1, "content": "Photoshop 中使用何種濾鏡，能使數位照片產生具有速度感的效果？ ①靜態模糊 ②邊緣模糊 ③鏡頭模糊 ④動態模糊 。" },
+  { "id": 108, "ans": "3", "count": 1, "content": "調整 Photoshop「色階」面板中的影像色階時， 若要調整為最亮的階調應該選擇下列何者數值？ ①0 ②10 ③255 ④256 。" },
+  { "id": 109, "ans": "4", "count": 1, "content": "Photoshop 預設環境中數位影像的變形操作時， 若要執行旋轉動作， 進行操作時按著 shift 鍵， 每次旋轉增量( Step) 為多少度？ ①90 ②45 ③30 ④15 。" },
+  { "id": 110, "ans": "2", "count": 1, "content": "Photoshop 中針對所選取的影像區域操作傾斜變形效果，使用滑鼠拖拉邊界方框中間的控制點時，需按住那個鍵盤按鍵方可進行水平或垂直傾斜變形？ ①Alt ②Shift ③Ctrl ④Tab 。" },
+  { "id": 111, "ans": "4", "count": 1, "content": "Photoshop 關於濾鏡功能之敘述何者較適當？ ①濾鏡不可多重套用 ②所有濾鏡皆能用在 CMYK 色彩模式的檔案中 ③所有濾鏡皆能用在[點陣圖]或[索引色]的色彩模式檔案中 ④LAB 色彩模式的檔案中只支援部分濾鏡 。" },
+  { "id": 112, "ans": "3", "count": 1, "content": "Photoshop 用來編輯網頁用的圖片，何種條件(影像解析度、色彩模式、檔案格式)的組合最適合？ ①350ppi、CMYK、EPS ②72ppi、RGB、EPS③72ppi、RGB、JPEG ④350ppi、CMYK、JPEG 。" },
+  { "id": 113, "ans": "1", "count": 1, "content": "Photoshop 中欲將圖片的色彩模式由[RGB] 轉換成[雙色調]的步驟何者較為適當？ ①先轉成[ 灰階]， 再轉成[雙色調] ②直接將[RGB] 轉成[ 雙色調]③先轉成[LAB]，再轉成[雙色調] ④先轉成[CMYK]，再轉成[雙色調] 。" },
+  { "id": 114, "ans": "3", "count": 1, "content": "Photoshop 中一個 8 位元的灰階檔案，最多可以包含多少色階？ ①8 ②252 ③256 ④65536 。" },
+  { "id": 115, "ans": "3", "count": 1, "content": "Photoshop 中何者為最常使用在印刷用途的色彩模式？ ①RGB ②LAB ③CMYK ④索引色 。" },
+  { "id": 116, "ans": "3", "count": 1, "content": "Photoshop 中何者不是進行 Color Correction(色彩修正與調整)時所用的術語？ ①Saturation ②Chroma ③Alignment ④Tone 。" },
+  { "id": 117, "ans": "4", "count": 1, "content": "Photoshop 中製作一個包含去背的透明背景及陰影效果的網頁圖片， 且要保留 Alpha 透明度，應該選擇何種檔案儲存格式？ ①GIF ② JPEG ③ PNG-8 ④PNG-24 。" },
+  { "id": 118, "ans": "3", "count": 1, "content": "Photoshop 預設環境中使用圖層遮色片， 其遮色片內使用黑色與白色各代表何種意義？ ①黑色顯示影像，白色隱藏影像 ②黑色羽化影像，白色反白顯示影像 ③黑色隱藏影像，白色顯示影像 ④黑色反轉影像，白色顯示影像 。" },
+  { "id": 119, "ans": "1", "count": 1, "content": "Photoshop 製作使用於網頁上包含簡單線條的圖案且具有交錯式效果的圖檔，儲存何種影像格式較適當？ ①GIF ②PDF ③TIFF ④JPEG 。" },
+  { "id": 120, "ans": "2", "count": 1, "content": "「網頁安全色」在 Internet Explorer 能正常顯示的顏色，其顏色數為多少？①108 ②216 ③256 ④512 。" },
+  { "id": 121, "ans": "3", "count": 1, "content": "PHP 用何種符號加上變數名稱來表示變數？ ①# ②& ③$ ④% 。" },
+  { "id": 122, "ans": "2", "count": 1, "content": "PHP 用何種保留字來宣告常數？ ①set ②define ③var ④array 。" },
+  { "id": 123, "ans": "4", "count": 1, "content": "要宣告一個物件前， PHP 用那個關鍵字來定義該物件的類別？ ①set ②define ③use ④class 。" },
+  { "id": 124, "ans": "1", "count": 1, "content": "PHP 使用何種函數可將變數的資料型態轉換成整數？ ①intval ②floatval ③doubleval ④strval 。" },
+  { "id": 125, "ans": "2", "count": 1, "content": "PHP 使用何種函數可將變數的資料型態轉換成浮點數？ ①intval ②floatval ③conval ④strval 。" },
+  { "id": 126, "ans": "2", "count": 1, "content": "PHP 使用何種語法來輸出字串在網頁上？ ① type ②print ③string ④show" },
+  { "id": 127, "ans": "1", "count": 1, "content": "若要顯示 2 進位的整數，可使用 PHP 的那個格式字元？ ①% b ②% c ③% d ④% u 。" },
+  { "id": 128, "ans": "2", "count": 1, "content": "若要顯示字元， 可使用 PHP 的那個格式字元？ ①% b ②% c ③% d ④% u 。" },
+  { "id": 129, "ans": "3", "count": 1, "content": "若要顯示有正負號的整數，可使用 PHP 的那個格式字元？ ①% b ②% c ③% d ④% u 。" },
+  { "id": 130, "ans": "4", "count": 1, "content": "若要顯示無正負號的整數，可使用 PHP 的那個格式字元？ ①% b ②% c ③% d ④% u 。" },
+  { "id": 131, "ans": "1", "count": 1, "content": "若要顯示浮點數，可使用 PHP 的那個格式字元？ ①% f ②% o ③% s ④% x 。" },
+  { "id": 132, "ans": "2", "count": 1, "content": "若要顯示 8 進位的整數，可使用 PHP 的那個格式字元？ ①% f ②% o ③%s ④% x 。" },
+  { "id": 133, "ans": "3", "count": 1, "content": "若要顯示字串， 可使用 PHP 的那個格式字元？ ①% f ②% o ③% s ④% x 。" },
+  { "id": 134, "ans": "4", "count": 1, "content": "若要顯示小寫的 16 進位整數，可使用 PHP 的那個格式字元？ ①% f ②%o ③% s ④% x 。" },
+  { "id": 135, "ans": "1", "count": 1, "content": "若要顯示大寫的 16 進位整數， 可使用 PHP 的那個格式字元？ ①% X ②% H ③% h ④% x 。" },
+  { "id": 136, "ans": "4", "count": 1, "content": "何者陳述式不是 PHP 的條件控制語法？ ①if ②?: ③switch ④continue 。" },
+  { "id": 137, "ans": "1", "count": 1, "content": "何者陳述式不是 PHP 的迴圈控制語法？ ①if…elseif …else ②break ③ for④do…while 。" },
+  { "id": 138, "ans": "1", "count": 1, "content": "可檢視陣列內容的 PHP 函數為何？ ①var_dump ②is_arrary ③sizeof ④is_array 。" },
+  { "id": 139, "ans": "2", "count": 1, "content": "PHP 檢視陣列的函數何者可以顯示變數的內容？ ①is_arrary ②print_r ③sizeof ④is_array 。" },
+  { "id": 140, "ans": "3", "count": 1, "content": "PHP 檢視陣列的函數何者可以計算陣列的元素數目？ ①var_dump ②print_r ③sizeof ④is_array 。" },
+  { "id": 141, "ans": "4", "count": 1, "content": "PHP 檢視陣列的函數何者可以檢查指定的變數是否是陣列？ ①var_dump②print_r ③sizeof ④is_array 。" },
+  { "id": 142, "ans": "1", "count": 1, "content": "PHP 檢視陣列的函數何者可以指定陣列的元素給變數？ ①list ②isset($arrary[$key]) ③arrary_key_exists ④in_arrary 。" },
+  { "id": 143, "ans": "2", "count": 1, "content": "PHP 檢視陣列的函數何者可以檢查指定的陣列鍵值是否為 “NULL？ ①list②isset($arrary[$key]) ③arrary_key_exists ④in_arrary 。" },
+  { "id": 144, "ans": "3", "count": 1, "content": "PHP 檢視陣列的函數何者可以檢查指定的鍵值是否存在於陣列中？ ①list②isset($arrary[$key]) ③arrary_key_exists ④in_arrary 。" },
+  { "id": 145, "ans": "4", "count": 1, "content": "PHP 檢視陣列的函數何者可以檢查指定的數值是否存在於陣列中？ ①list②isset($arrary[$key]) ③arrary_key_exists ④in_arrary 。" },
+  { "id": 146, "ans": "1", "count": 1, "content": "ASP.NET 應用程式位於網站伺服器內的一個虛擬目錄中，由一群檔案組成，何者包含所有編譯過的 .NET 組件 (DLL 檔案)？ ① Bin ②App_Code ③App_data ④App_Themes 。" },
+  { "id": 147, "ans": "2", "count": 1, "content": "ASP.NET 應用程式中，何者包含要使用在設計者的應用程式內之動態編譯過的程式碼？ ①Bin ②App_Code ③ App_data ④App_Themes 。" },
+  { "id": 148, "ans": "3", "count": 1, "content": "ASP.NET 應用程式中，何者用來放置資料庫與 XML 等資料檔案？ ①Bin ②App_Code ③App_data ④App_Themes 。" },
+  { "id": 149, "ans": "4", "count": 1, "content": "ASP.NET 應用程式中，何者用來放置佈景檔案？ ① Bin ②App_Code ③ App_data ④ App_Themes 。" },
+  { "id": 150, "ans": "1", "count": 1, "content": "ASP.NET 網頁的指示詞(Directive)來控制行為，其標記為何？ ①以<%@符號開頭，以%> 結尾 ②以<body開頭 ③以<?php開頭 ④以<html開頭 。" },
+  { "id": 151, "ans": "1", "count": 1, "content": "ASP.NET 的指示詞何者定義剖析器及編輯器使用的專用屬性？ ①@Page ②@Control ③@Import ④@OutputCache 。" },
+  { "id": 152, "ans": "2", "count": 1, "content": "ASP.NET 的指示詞何者定義使用者控制項(.ascx 檔案)的特定屬性？ ①@Page ②@Control ③@Import ④@OutputCache 。" },
+  { "id": 153, "ans": "3", "count": 1, "content": "ASP.NET 的指示詞何者可將命名空間明確匯入，能在檔案中使用該命名空間的所有類別？ ①@Page ②@Control ③@Import ④@OutputCache 。" },
+  { "id": 154, "ans": "4", "count": 1, "content": "ASP.NET 的指示詞何種宣告方式用來控制網頁輸出快取原則？ ①@Page ②@Control ③@Import ④@OutputCache 。" },
+  { "id": 155, "ans": "1", "count": 1, "content": "PHP 使用何種運算子可將字串連結？ ①. ②+ ③- ④& 。" },
+  { "id": 156, "ans": "4", "count": 1, "content": "PHP 程式 $x=”Hello”;$y=”World”;echo $x+$y;其輸出為何？ ①Hello+World ②Hello World ③Hello World ④0 。" },
+  { "id": 157, "ans": "2", "count": 1, "content": "PHP 程式 echo ”\\”escaped character\\””; 其輸出為何？ ①”\\”escaped character\\”” ②”escaped character” ③\\escaped character\\ ④escaped character" },
+  { "id": 158, "ans": "3", "count": 1, "content": "PHP 程式 $a='abcdefg'; echo strlen($a) 其輸出為何？ ①strlen($a) ②abcdefg ③7 ④'abcdefg'。" },
+  { "id": 159, "ans": "2", "count": 1, "content": "何種實體網路拓樸最有可能因網路交換器(Switch Hub)故障，導致整個網路當掉？ ①Bus ②Star ③Ring ④Mesh 。" },
+  { "id": 160, "ans": "3", "count": 1, "content": "要從有線 LAN 轉換成無線乙太網路 LAN，主機必須改變何者？ ①不需改變 ②需新 IP ③需適當的網路卡或轉接器 ④需升級 OS 。" },
+  { "id": 161, "ans": "3", "count": 1, "content": "企業要延伸 LAN 到 6 個建築物，為減少訊號衰減，使用何種媒體最適當？ ① Wireless ②Coaxial Cable ③Fiber ④Twisted Pair 。" },
+  { "id": 162, "ans": "2", "count": 1, "content": "使用者抱怨網路反應不佳，何種設備可用來取代集線器並改善效率？ ①Router ②Switch ③Bridge ④Repeater 。" },
+  { "id": 163, "ans": "4", "count": 1, "content": "網路介面卡上的 MAC 位址是屬於 OSI 模式的那一層？ ①Physical ②Application ③Network ④Data Link 。" },
+  { "id": 164, "ans": "3", "count": 1, "content": "橋接器(Bridge)使用何種位址來作過濾和交換的決定？ ①來源 MAC ②來源 IP ③目的地 MAC ④網路 IP 。" },
+  { "id": 165, "ans": "1", "count": 1, "content": "何者可使不同供應商設計的軟硬體更容易整合？ ①OSI 模式 ②IP 定址策略 ③標準邏輯拓樸 ④標準實體拓樸 。" },
+  { "id": 166, "ans": "4", "count": 1, "content": "資料由應用層往實體層傳送，每一層將資訊加入原資料的過程稱之為何？ ① Division ②Encoding ③Segmentation ④Encapsulation 。" },
+  { "id": 167, "ans": "3", "count": 1, "content": "OSI 七層架構中，傳輸層的資料單元稱之為何？ ①Bit ②Packet ③Segment ④Frame 。" },
+  { "id": 168, "ans": "4", "count": 1, "content": "OSI 七層架構中，提供電子郵件和檔案傳輸服務的是哪一層？ ①Data Link ②Transport ③Network ④Application 。" },
+  { "id": 169, "ans": "4", "count": 1, "content": "資料封裝之順序為何？ ①B-D-C-E-A ②B-A-C-E-D ③D-C-A-B-E ④D-A-C-E-B 。" },
+  { "id": 170, "ans": "1", "count": 1, "content": "OSI 七層架構中，實體層功能之最佳描述為何？ ① 定義電氣和功能規格 ②提供可靠傳送 ③路徑選擇 ④處理實體位址 。" },
+  { "id": 171, "ans": "3", "count": 1, "content": "MAC 位址有多少十六進位數？ ①2 ②8 ③12 ④16 。" },
+  { "id": 172, "ans": "2", "count": 1, "content": "MAC 位址屬於 OSI 七層中的那一層？ ①1 ②2 ③3 ④4 。" },
+  { "id": 173, "ans": "2", "count": 1, "content": "路由器介面中，那些會有 MAC 位址？ ①串列和 ISDN ②乙太網路和記號環 ③乙太網路和 ISDN ④記號環和串列 。" },
+  { "id": 174, "ans": "4", "count": 1, "content": "乙太網路介面卡可以傳送資料的時機為何？ ①收到訊框 ②收到記號 ③偵測到碰撞 ④偵測無線上訊號時 。" },
+  { "id": 175, "ans": "1", "count": 1, "content": "OSI 七層架構中，何者屬於實體層設備？ ①Repeater ② Switch ③Bridge ④Router 。" },
+  { "id": 176, "ans": "2", "count": 1, "content": "何者屬於區域網路 (LAN)？ ①連接廣大區域 ②連結地理有限區域內的設備 ③連接跨國企業 ④用工作群組連接 。" },
+  { "id": 177, "ans": "3", "count": 1, "content": "電腦的 MAC 位址何時會改變？ ①移動橋接器 ②變更 PCI 位置 ③更換網路介面卡 ④自動切換速度 。" },
+  { "id": 178, "ans": "4", "count": 1, "content": "OSI 七層架構中，傳輸層的主要功能為何？ ①Network Media ②Repre sentation ③Selec ts Paths ④End-to-End Connectivity 。" },
+  { "id": 179, "ans": "1", "count": 1, "content": "IP 位址 127.0.0.1 之敘述何者最正確？ ①保留當作迴路(Loopback)測試 ②多點傳輸測試 ③單點傳輸測試 ④屬於 B 級位址 。" },
+  { "id": 180, "ans": "4", "count": 1, "content": "網路中 DHCP 伺服器的功能為何？ ①解析 MAC 成 IP ②解析 IP 成 MAC ③解析名稱成 IP ④動態指派 IP 。" },
+  { "id": 181, "ans": "1", "count": 1, "content": "TCP/IP 模式中，那一分層同時支援 LAN 及 WAN 的技術？ ①Network Access Layer ②Internet Layer ③Transport Layer ④Application Layer 。" },
+  { "id": 182, "ans": "4", "count": 1, "content": "交換器和路由器轉送的依據為何？ ①兩者皆用 IP ②兩者皆用 MAC ③交換器 IP 路由器 MAC ④交換器 MAC 路由器 IP 。" },
+  { "id": 183, "ans": "1", "count": 1, "content": "使用 FTP 服務時，那個傳輸層協定被用來傳送資料？ ①TCP ②DNS ③IP ④UDP 。" },
+  { "id": 184, "ans": "2", "count": 1, "content": "OSI 模式中，那個協定允許網路設備交換管理資訊？ ①SMTP ②SNMP ③FTP ④TFTP 。" },
+  { "id": 185, "ans": "4", "count": 1, "content": "何種協定用於傳送檔案但被視為無連結導向？ ①DHCP ②SNMP ③FTP ④TFTP 。" },
+  { "id": 186, "ans": "4", "count": 1, "content": "OSI 模式中，何層提供主機間可靠連結服務進行資料傳輸？ ①Application ②Presentation ③Session ④Transport Layer 。" },
+  { "id": 187, "ans": "3", "count": 1, "content": "何種設備會產生多個碰撞領域 (Collision Domains)？ ①NIC ②Hub ③Router ④Repeater 。" },
+  { "id": 188, "ans": "4", "count": 1, "content": "若橋接器收到 MAC 位址不在表內的訊框，會如何處理？ ①丟棄 ②忽略 ③傳送到適當埠 ④傳送到來源埠之外所有埠 。" },
+  { "id": 189, "ans": "3", "count": 1, "content": "何種設備會同時減少碰撞領域和廣播領域的大小？ ① Layer 2 Switch ②Hub ③Bridge ④Repeater 。" },
+  { "id": 190, "ans": "4", "count": 1, "content": "何種無線網路標準運作在 5 GHz，最高速可達 866.7 Mbps？ ①802.11a ②802.11g ③802.11n ④802.11ac 。" },
+  { "id": 191, "ans": "4", "count": 1, "content": "路由程序 (Routing Process) 的主要目的為何？ ①傳遞廣播 ②對應 IP 成 MAC ③對應 MAC 成 IP ④繞送路徑 。" },
+  { "id": 192, "ans": "1", "count": 1, "content": "那個設備因不會轉送廣播而提高網路安全性？ ①Router ②Bridge ③Hub ④Repeater 。" },
+  { "id": 193, "ans": "3", "count": 1, "content": "POP3 是何種伺服器？ ①檔案 ②網站 ③收信 ④寄信 。" },
+  { "id": 194, "ans": "4", "count": 1, "content": "SMTP 是何種伺服器？ ①檔案 ②網站 ③收信 ④寄信 。" },
+  { "id": 195, "ans": "2", "count": 1, "content": "何者是「檔案傳送」所使用的通訊協定？ ①HTTP ②FTP ③ISP ④MAILTO 。" },
+  { "id": 196, "ans": "2", "count": 1, "content": "何者是電子郵件「內收郵件」使用的通訊協定？ ①FTP ②POP ③SMTP ④IPX 。" },
+  { "id": 197, "ans": "3", "count": 1, "content": "何者是電子郵件「外寄郵件」使用的通訊協定？ ①FTP ②POP ③SMTP ④IMAP 。" },
+  { "id": 198, "ans": "2", "count": 1, "content": "OSI 七層協定中「網路硬體協定」屬於那一層？ ①網路層 ②實體層 ③應用層 ④傳輸層 。" },
+  { "id": 199, "ans": "2", "count": 1, "content": "OSI 七層協定中定義終端設備介面的是哪一層？ ①網路層 ②實體層 ③應用層 ④傳輸層 。" },
+  { "id": 200, "ans": "2", "count": 1, "content": "那個 FTP 指令可以用來查看遠端伺服器目前目錄位置？ ①get ②pwd ③put ④bin 。" },
+  { "id": 201, "ans": "2", "count": 1, "content": "將文字連結到故宮網站應使用？ ①框架連結 ②網站連結 ③跑馬燈 ④影像地圖 。" },
+  { "id": 202, "ans": "2", "count": 1, "content": "HTML 的 <TITLE> 內容會顯示在？ ①瀏覽視窗 ②標題列或標籤頁 ③文件最上面 ④狀態列 。" },
+  { "id": 203, "ans": "4", "count": 1, "content": "設計網頁時將畫面分割成多個區塊顯示？ ①佈景主題 ②超連結 ③DHTML ④HTML 區塊標籤 。" },
+  { "id": 204, "ans": "2", "count": 1, "content": "HTML 標準是由哪個單位制定的？ ①IEEE ②W3C ③ISO ④EIA 。" },
+  { "id": 205, "ans": "4", "count": 1, "content": "在標題列上加入文字的標籤？ ①<HEAD> ②<P> ③<BODY> ④<TITLE> 。" },
+  { "id": 206, "ans": "2", "count": 1, "content": "DNS 的預設通訊埠號為何？ ①110 ②53 ③21 ④25 。" },
+  { "id": 207, "ans": "3", "count": 1, "content": "TCP 之 Well-Known Port 最大分布範圍為何？ ①0～127 ②0～255 ③0～1023 ④0～2047 。" },
+  { "id": 208, "ans": "3", "count": 1, "content": "標準網路設備可連接不同網段 IP 網路的是？ ①Hub ②Bridge ③Router ④Repeater 。" },
+  { "id": 209, "ans": "4", "count": 1, "content": "OSI 七層協定之第三層通訊協定為何？ ①Transport ②Data Link ③Physical ④Network 。" },
+  { "id": 210, "ans": "1", "count": 1, "content": "何種聲音檔案格式最不利於網路傳輸速度？ ①WAV ②MIDI ③MP3 ④WMA 。" },
+  { "id": 211, "ans": "3", "count": 1, "content": "何者是動態圖形的副檔名？ ①.cgm ②.bmp ③.gif ④.jpg 。" },
+  { "id": 212, "ans": "4", "count": 1, "content": "何者可檢視電腦資源被其他網路 User 使用的狀況？ ①安裝精靈 ②遠端桌面 ③超級終端機 ④網路監控程式 。" },
+  { "id": 213, "ans": "3", "count": 1, "content": "何種 FTP 指令可將檔案傳至遠端伺服器？ ①get ②pwd ③put ④bin 。" },
+  { "id": 214, "ans": "2", "count": 1, "content": "何者無法用來架設部落格 (Blog)？ ①Wix ②WordPad ③WordPress ④Weebly 。" },
+  { "id": 215, "ans": "2", "count": 1, "content": "Class C 以遮罩 255.255.255.192 切割，可劃分幾個區段？ ①2 ②4 ③8 ④16 。" },
+  { "id": 216, "ans": "4", "count": 1, "content": "何種方式可以節省網頁設計空間？ ①分類 ②動態 GIF ③圖片排序 ④降低大小及解析度 。" },
+  { "id": 217, "ans": "3", "count": 1, "content": "何種視訊格式最不適合用於網頁？ ①MP4 ②WebM ③VOB ④Ogg 。" },
+  { "id": 218, "ans": "2", "count": 1, "content": "定義網頁資料顯示格式、特殊效果的標準？ ①SCC ②CSS ③SSC ④CCS 。" },
+  { "id": 219, "ans": "3", "count": 1, "content": "FTP 服務中的傳輸層使用何種協定？ ①IP ②UDP ③TCP ④NETBIOS 。" },
+  { "id": 220, "ans": "1", "count": 1, "content": "何者不是 Server Side 的 Script 語言？ ①JavaScript ②ASP.NET ③JSP ④PHP 。" },
+  { "id": 221, "ans": "4", "count": 1, "content": "對於 JAVA 而言，在瀏覽器環境運行的程式？ ①MIDlet ②Spotlet ③JSP ④Applet 。" },
+  { "id": 222, "ans": "4", "count": 1, "content": "何者不是安裝 Web Server 的軟體？ ①Apache ②Tomcat ③IIS ④DHCP 。" },
+  { "id": 223, "ans": "2", "count": 1, "content": "Dreamweaver 新增 Behavior 是套用何種語法？ ①ASP ②JavaScript ③PHP ④ActionScript 。" },
+  { "id": 224, "ans": "3", "count": 1, "content": "Class C 劃分為 4 子網路，可用 IP 數共多少？ ①244 ②240 ③248 ④256 。" },
+  { "id": 225, "ans": "1", "count": 1, "content": "何者是 HTML 送出表單資料的控制項？ ①submit ②reset ③checkbox ④textbox 。" },
+  { "id": 226, "ans": "2", "count": 1, "content": "何者不是用在網頁中以增強效果或功能？ ① PHP ②QQ ③XML ④ ASP 。" },
+  { "id": 227, "ans": "1", "count": 1, "content": "建立內部 CSS 樣式應寫在那個標籤內？ ①<style> ②<img> ③<link> ④<p> 。" },
+  { "id": 228, "ans": "4", "count": 1, "content": "用遮罩 255.255.255.248 劃分，每個子網域最多幾個 IP？ ①1 ②4 ③16 ④8 。" },
+  { "id": 229, "ans": "3", "count": 1, "content": "設定超連結的 HTML 標籤？ ①<href> ②<hr> ③<a> ④<src> 。" },
+  { "id": 230, "ans": "2", "count": 1, "content": "HTML 以「開新視窗」方式呈現連結網頁，Target 設定為何？ ①_top ②_blank ③_home ④_parent 。" },
+  { "id": 231, "ans": "3", "count": 1, "content": "滑鼠移至圖片更換另一張圖片的效果？ ①超連結 ②跑馬燈 ③交換圖像 ④影像地圖 。" },
+  { "id": 232, "ans": "1", "count": 1, "content": "傳回目前目錄字串的 PHP 函式？ ①string getcwd(void) ②int getmygid ③int getmyuid ④int gettype 。" },
+  { "id": 233, "ans": "2", "count": 1, "content": "傳回目前 PHP 程式群體 ID 值的函式？ ①string getcwd ②int getmygid(void) ③int getmyuid ④int gettype 。" },
+  { "id": 234, "ans": "3", "count": 1, "content": "傳回 PHP 程式用戶識別碼的函式？ ①string getcwd ②int getmygid ③int getmyuid(void) ④int gettype 。" },
+  { "id": 235, "ans": "4", "count": 1, "content": "傳回變數 var 型態的函式？ ①string getcwd ②int getmygid ③int getmyuid ④int gettype(mixed var) 。" },
+  { "id": 236, "ans": "3", "count": 1, "content": "JS 中 document.write(9>>) 執行結果為何？ ①0 ②1 ③2 ④3 。" },
+  { "id": 237, "ans": "4", "count": 1, "content": "HTML 語法中尚未點選過的超連結物件顏色為何？ ①紅色 ②黃色 ③綠色 ④藍色 。" },
+  { "id": 238, "ans": "2", "count": 1, "content": "HTML 標籤 <frameset> 其作用為何？ ①分隔線 ②框架 ③文字 ④表格 。" },
+  { "id": 239, "ans": "1", "count": 1, "content": "何種圖形格式最適合網頁小型圖示或按鈕？ ①gif ②tif ③bmp ④wmf 。" },
+  { "id": 240, "ans": "1", "count": 1, "content": "何種網路結構，因某部特定電腦故障可能導致整個網路不通？ ①星狀 ②雙環狀 ③匯流排 ④樹狀 。" },
+  { "id": 241, "ans": "4", "count": 1, "content": "撥接數據機是使用何種信號傳送？ ①數位 ②光脈衝 ③語音 ④調變音頻 。" },
+  { "id": 242, "ans": "1", "count": 1, "content": "10 BaseT 網路線材最遠距離為何？ ①100 公尺 ②200 公尺 ③300 公尺 ④400 公尺 。" },
+  { "id": 243, "ans": "4", "count": 1, "content": "何種介質傳輸速率最快？ ①電話線 ②同軸電纜 ③雙絞線 ④光纖 。" },
+  { "id": 244, "ans": "4", "count": 1, "content": "何種網路資料傳輸最高未達 100 Mbps？ ①VDSL2 ②ATM ③Wi-Fi 6 ④OC-1 。" },
+  { "id": 245, "ans": "2", "count": 1, "content": "哪一 IP 位址被保留作迴路測試用？ ①0.0.0.1 ②127.0.0.1 ③255.255.0.0 ④255.255.255.0 。" },
+  { "id": 246, "ans": "3", "count": 1, "content": "將 CLASS C 網路以網路遮罩 255.255.255.224 切割成子網路，可切成幾個網路區段？ ①2 ②4 ③8 ④16 。" },
+  { "id": 247, "ans": "1", "count": 1, "content": "將 CLASS C 網路以網路遮罩 255.255.255.224 切割成子網路，每個子網路中可用之網路位址數為？ ①30 ②32 ③62 ④64 。" },
+  { "id": 248, "ans": "3", "count": 1, "content": "何者最不可能是 XML 文件的功用？ ①儲存 HTML 顯示的文件內容 ②作為資料交換的格式 ③作為編排處理的內容 ④作為資料儲存的格式 。" },
+  { "id": 249, "ans": "1", "count": 1, "content": "何者是轉換 XML 文件的技術？ ①XSLT ②XQuery ③XPath ④XLink 。" },
+  { "id": 250, "ans": "4", "count": 1, "content": "何者是連結資源的 XML 技術？ ①XSLT ②XQuery ③XPath ④XLink 。" },
+  { "id": 251, "ans": "2", "count": 1, "content": "何者是解決 XML 文件標籤(Tag)名稱重複的最佳方式？ ①名稱宣告 ②名稱空間 ③名稱加長 ④名稱縮寫 。" },
+  { "id": 252, "ans": "1", "count": 1, "content": "HTML 網頁中嵌入 PHP 程式碼，何組標籤最不適用？ ①②<? ?> ③<?php ?> ④<script language=\"php\"> 。" },
+  { "id": 253, "ans": "2", "count": 1, "content": "關於 PHP <?php phpinfo() ?> 的意義為何？ ①顯示目前的網址訊息 ②顯示 PHP 在網頁上的相關訊息 ③顯示程式執行時產生的錯誤訊息 ④顯示程序執行完成的訊息 。" },
+  { "id": 254, "ans": "2", "count": 1, "content": "關於 PHP 的 Cookie 與 Session 敘述何者最不適當？ ①Cookie 變數均儲放在客戶端 ②Session 變數均儲放在伺服端 ③Cookie 與 Session 的生命週期可自行設定 ④Cookie 與 Session 資料可以分別用 $_COOKIE 與 $_SESSION 取得 。" },
+  { "id": 255, "ans": "1", "count": 1, "content": "PHP 用來建立一個新物件的關鍵字為何？ ①new ②create ③create object ④construct 。" },
+  { "id": 256, "ans": "3", "count": 1, "content": "關於 HTML 語法何者最不妥善？ ①<h1></h1> ②<H1></H1> ③<h 1></h 1> ④<H1>/h1> 。" },
+  { "id": 257, "ans": "3", "count": 1, "content": "設定網頁背景色何者正確？ ①backgroundcolor=\"yellow\" ②color=\"yellow\" ③bgcolor=\"yellow\" ④bg=\"yellow\" 。" },
+  { "id": 258, "ans": "2", "count": 1, "content": "設定網頁背景圖案何者正確？ ①backgroundimage=\"bg.jpg\" ②background=\"bg.jpg\" ③bgimage=\"bg.jpg\" ④image=\"bg.jpg\" 。" },
+  { "id": 259, "ans": "2", "count": 1, "content": "設定網頁中所有文字顏色(color)，何者最妥當？ ①color=\"blue\" ②body text=\"color\" ③font color=\"blue\" ④font text=\"color\" 。" },
+  { "id": 260, "ans": "2", "count": 1, "content": "關於 HTML 標籤無法設定哪一部分的顏色？ ①超連結 ②圖片外框 ③儲存格的背景 ④表格格線 。" },
+  { "id": 261, "ans": "4", "count": 1, "content": "關於 HTML 網頁欲加入註解應使用何種方式？ ①/* */ ②// ③# ④。" },
+  { "id": 262, "ans": "1", "count": 1, "content": "何者最不適合置於 HTML 的 <head> 標籤之中？ ①<marquee> ②<style> ③<link> ④<base> 。" },
+  { "id": 263, "ans": "3", "count": 1, "content": "關於 HTML 的 <head> 標籤中，欲設定超連結之基準位址的標籤為何？ ①<link> ②<url> ③<base> ④<style> 。" },
+  { "id": 264, "ans": "4", "count": 1, "content": "哪一個 XML 區塊是告訴 XML 剖析器不用處理此區塊的內容？ ①<?xml..?> ②<?xml-stylesheet..?> ③<!DOCTYPE..> ④<![CDATA[..]]> 。" },
+  { "id": 265, "ans": "2", "count": 1, "content": "XML 屬性是定義在 XML 元素的哪一個部分？ ①元素內容 ②開始標籤 ③結尾標籤 ④註解 。" },
+  { "id": 266, "ans": "3", "count": 1, "content": "HTML 網頁中的標題文字共分為幾個層次？ ①4 ②5 ③6 ④7 。" },
+  { "id": 267, "ans": "2", "count": 1, "content": "HTML 網頁中欲將文字內容加上底線，其標籤為何？ ①<b> ②<u> ③<i> ④<p> 。" },
+  { "id": 268, "ans": "3", "count": 1, "content": "HTML 網頁中欲將文字內容強迫換行顯示，其標籤為何？ ①<p> ②<img> ③<br> ④<hr> 。" },
+  { "id": 269, "ans": "4", "count": 1, "content": "HTML 網頁中欲保留原始輸入的格式(如：斷行、空白)，其標籤為何？ ①<div> ②<span> ③<xmp> ④<pre> 。" },
+  { "id": 270, "ans": "3", "count": 1, "content": "哪一個 HTML 標籤可使裡頭的標籤不會被瀏覽器解釋執行並直接顯示出標籤及內容？ ①<div> ②<span> ③<xmp> ④<pre> 。" },
+  { "id": 271, "ans": "4", "count": 1, "content": "哪一個 XHTML 語法可以讓圖片(logo.gif)正確的超連結至網頁(test.htm)中？ ①<img src=\"logo.gif\" href=\"test.htm\"/> ②<img src=\"test.htm\" href=\"logo.gif\"/> ③<img src=\"logo.gif\"><a></a> ④<a href=\"test.htm\"><img src=\"logo.gif\"></img></a> 。" },
+  { "id": 272, "ans": "3", "count": 1, "content": "利用 XHTML 語法建立網頁表格之標題，應使用哪一個標籤？ ①<title> ②<head> ③<caption> ④<th> 。" },
+  { "id": 273, "ans": "2", "count": 1, "content": "在 XHTML 中，<form> 標籤的屬性何者用來指定接收表單資料之伺服器端的程式？ ①method ②action ③name ④enctype 。" },
+  { "id": 274, "ans": "1", "count": 1, "content": "JavaScript 函式定義在哪一標籤中最合理，以便程式可呼叫使用？ ①<head> ②<title> ③<body> ④<style> 。" },
+  { "id": 275, "ans": "4", "count": 1, "content": "何者是 JavaScript 最不可能達到的功能？ ①更換背景色彩與字型大小 ②標題跑馬燈 ③顯示線上時鐘或日曆 ④將資料直接寫入資料庫 。" },
+  { "id": 276, "ans": "4", "count": 1, "content": "JavaScript 中那一個指令可以反覆執行一段程序，直到條件不符合時才停止？ ①if ②if…else ③for ④while 。" },
+  { "id": 277, "ans": "2", "count": 1, "content": "關閉瀏覽器視窗時會觸發 JavaScript 哪一個事件(Event)？ ①onLoad ②onUnload ③onChange ④onBlur 。" },
+  { "id": 278, "ans": "2", "count": 1, "content": "JavaScript 中那一個不屬於文件(Document)物件的方法(Method)？ ①open ②read ③write ④close 。" },
+  { "id": 279, "ans": "1", "count": 1, "content": "JavaScript 中使用那一個指令來建構物件？ ①function ②new ③object ④class 。" },
+  { "id": 280, "ans": "2", "count": 1, "content": "JavaScript 中欲使網頁回到上一頁，應執行那一個指令？ ①history.back(1) ②history.go(-1) ③history.previous(1) ④history.forward(-1) 。" },
+  { "id": 281, "ans": "2", "count": 1, "content": "利用 CSS 樣式設定超連結文字不出現底線，可利用哪一個屬性(Property)進行設定？ ①text-align ②text-decoration ③text-indent ④text-transform 。" },
+  { "id": 282, "ans": "3", "count": 1, "content": "利用 CSS 樣式設定段落字體為「微軟正黑體」，可利用哪一個屬性(Property)進行設定？ ①font-style ②font-variant ③font-family ④font-weight 。" },
+  { "id": 283, "ans": "4", "count": 1, "content": "利用 CSS 樣式設定段落字型的粗細，可利用哪一個屬性(Property)進行設定？ ①font-style ②font-variant ③font-family ④font-weight 。" },
+  { "id": 284, "ans": "1", "count": 1, "content": "在 JSP 網頁中，程式碼部分將以何種符號來標示？ ①<%..%> ②<?..?> ③<!..!> ④<?jsp..?> 。" },
+  { "id": 1, "ans": "1", "count": 1, "content": "何者可支援 64 位元雙 CPU、IPv4、IPv6 及提供 Microsoft AERO 操作介面？ ①Windows 10 ②Linux ③Windows Mobile ④Symbian OS 。" },
+  { "id": 2, "ans": "2", "count": 1, "content": "Windows 作業系統中，若具有自動辨識硬體設備並安裝相關驅動程式，方便該硬體設備能立即使用，這是屬於何種特性？ ①DDE ②P&P ③PHP ④OLE 。" },
+  { "id": 3, "ans": "1", "count": 1, "content": "何種作業系統的原始程式碼可開放供人下載、瀏覽、修改？ ①Linux ②Symbian ③Mac OS X ④Windows 。" },
+  { "id": 4, "ans": "3", "count": 1, "content": "關於作業系統之敘述何者正確？ ①具備圖形介面：Linux、MS-DOS ②開放原始碼：Windows 10、Linux ③單人多工：Windows 10、Mac OS X ④網路作業系統：Windows 10、UNIX 。" },
+  { "id": 5, "ans": "1", "count": 1, "content": "何者不能同一時間允許多個使用者，分別同時執行多個應用程式？ ①DOS ②Windows Server ③UNIX ④Linux 。" },
+  { "id": 6, "ans": "1", "count": 1, "content": "何者有提供電子白板的功能？ ①NetMeeting ②Skype ③Outlook ④Corel DRAW 。" },
+  { "id": 7, "ans": "4", "count": 1, "content": "那一個指令可用來連線到 BBS 站？ ①ping ②ipconfig ③tracert ④telnet 。" },
+  { "id": 8, "ans": "3", "count": 1, "content": "大部份的 BBS 網站會提供那一個帳號，讓網友以訪客的身分登入 BBS 站？ ①admin ②client ③guest ④new 。" },
+  { "id": 9, "ans": "4", "count": 1, "content": "電腦中安裝何種檔案分享軟體最容易導致個人資料外洩？ ①瀏覽器 ②FTP 軟體 ③即時通訊軟體 ④P2P 軟體 。" },
+  { "id": 10, "ans": "1", "count": 1, "content": "相關網路伺服器的功能說明何者錯誤？ ①DNS Server 用於網域名稱和 IP 位址之間的轉譯，同時具有防火牆的功能 ②FTP Server 提供匿名帳號，可以直接下載檔案 ③Proxy Server 具快取功能，可減低網路流量負載 ④Print Server 可以設定由多個使用者共用一台印表機 。" },
+  { "id": 11, "ans": "4", "count": 1, "content": "關於 Google 服務的敘述何者正確？ ①Google 是著名的拍賣網站 ②iGoogle 是將 Apple 產品整合於 Google 平台 ③Google Earth 是新的網路導航系統，可進行連線互動遊戲 ④Google Map 提供使用者貼上地圖中某位置的照片，這是一種 Web 2.0 的應用 。" },
+  { "id": 12, "id_alt": "3", "ans": "3", "count": 1, "content": "軟體：Android、Windows、Avira AntiVirus、Kaspersky、Ubuntu、iOS、Firefox 中，屬於系統軟體的共有幾種？ ①2 ②3 ③4 ④6 。" },
+  { "id": 13, "ans": "4", "count": 1, "content": "何者不是 Windows 作業系統執行磁碟重組程式時會發生的現象？ ①屬於同一個檔案的資料儘量集中儲存於鄰近的磁區 ②提升系統存取檔案的效率 ③同時會更改檔案配置表 ④可同時清除駭客入侵程式 。" },
+  { "id": 14, "ans": "3", "count": 1, "content": "何者在初次發佈時，即以開放原始碼的方式釋出，使得愛好者得以自由加入修改、研究系統核心？ ①Windows ②macOS ③Linux ④IBM z/OS 。" },
+  { "id": 15, "ans": "1", "count": 1, "content": "Google 開發的智慧型手機作業系統稱之為何？ ①Android ②OS/2 ③Symbian OS ④Windows Mobile 。" },
+  { "id": 16, "ans": "3", "count": 1, "content": "關於網際網路服務之敘述何者不適當？ ①可在 BBS 上發表自己對時事的看法 ②Line 能與好朋友即時影音通訊 ③透過 VoIP 可在網路上看電影和聽音樂 ④可以在 Google Maps 中看到住家附近的街景 。" },
+  { "id": 17, "ans": "3", "count": 1, "content": "何種是使用電腦網路來進行轉帳及線上付款等功能？ ①電子錢包 ②遠距教學 ③網路銀行 ④視訊會議 。" },
+  { "id": 18, "ans": "4", "count": 1, "content": "何者提供網際網路電子地圖服務？ ①Messenger ②Instagram ③Line ④Google Maps 。" },
+  { "id": 19, "ans": "3", "count": 1, "content": "網際網路上結合多種服務(如：地圖、影音及新聞)的技術稱之為何？ ①VRML ②HTML ③Mashup ④AJAX 。" },
+  { "id": 20, "ans": "1", "count": 1, "content": "關於網路之敘述何者正確？ ①具 IA 功能的家電可以讓身在遠方的人透過物聯網設備進行遠端遙控 ②防火牆的功能之一是將動態 IP 模擬成固定 IP ③Proxy Server 是架設 GIS 服務的伺服器 ④所有的電腦病毒會定期自動更新病毒碼 。" },
+  { "id": 21, "ans": "4", "count": 1, "content": "Google 網站使用何種伺服器來提供資料檢索服務？ ①視訊伺服器 ②列印伺服器 ③郵件伺服器 ④資料庫伺服器 。" },
+  { "id": 22, "ans": "2", "count": 1, "content": "用來描述「利用網路與媒體來突破空間限制，將教材傳遞給學習者的教學過程」的概念稱之為何？ ①電子商務 ②遠距教學 ③網路銀行 ④視訊會議 。" },
+  { "id": 23, "ans": "2", "count": 1, "content": "為什麼輸入 www.mol.gov.tw 可進入該網站？ ①因為有 DHCP 自動找到 IP 位址 ②因為有 DNS 能自動轉譯網域名稱為 IP 位址 ③因為有 Proxy 能自動儲存網站 ④因為有 NAT 能自動提供轉址服務 。" },
+  { "id": 24, "ans": "3", "count": 1, "content": "開設販賣 3C 產品的網站是屬於何種電子商務模式？ ①C2C ②B2B ③B2C ④B2G 。" },
+  { "id": 25, "ans": "4", "count": 1, "content": "有些網站在使用者登入後會自動記錄其帳號密碼，請問這些資料會存放在何處？ ①Proxy ②我的最愛 ③Temporary ④Cookie 。" },
+  { "id": 26, "ans": "4", "count": 1, "content": "何者是正確的電腦病毒預防觀念？ ①病毒只會破壞軟體不會破壞硬體 ②應讓大家一起來使用電腦以資源共享 ③有了防毒程式就高枕無憂 ④病毒不但會破壞軟體也會破壞硬體 。" },
+  { "id": 27, "ans": "3", "count": 1, "content": "何者不是一個完整的安全電子交易(SET)架構之要項？ ①認證中心 ②商店伺服器 ③商品 ④電子錢包 。" },
+  { "id": 28, "ans": "2", "count": 1, "content": "何者無法辨識是否已被病毒感染？ ①檔案儲存容量改變 ②電源電壓變小 ③螢幕出現亂碼 ④檔案儲存日期改變 。" },
+  { "id": 29, "ans": "4", "count": 1, "content": "未使用網路服務，電腦網路卻一直不斷有存取動作，最可能感染了何種病毒？ ①Word 巨集病毒 ②檔案型病毒 ③開機型病毒 ④特洛伊木馬程式 。" },
+  { "id": 30, "ans": "1", "count": 1, "content": "個人電腦如果已感染病毒時，何種處理方式較適宜？ ①進行解毒 ②重新開機 ③更換硬碟 ④更換主記憶體 。" },
+  { "id": 31, "ans": "1", "count": 1, "content": "關於電腦病毒防治之敘述何者錯誤？ ①只要將被感染之程式刪除就不會再被感染 ②用乾淨無毒的開機光碟開機 ③不使用來路不明之隨身碟 ④電腦上加裝防毒軟體 。" },
+  { "id": 32, "ans": "3", "count": 1, "content": "何者是部落格的精簡版，有較嚴格的字數限制，提供更簡單的發布流程？ ①RSS ②WiKi ③Twitter ④LBS 。" },
+  { "id": 33, "ans": "2", "count": 1, "content": "欲搜尋網路上檔名含有「生物」的 .pdf 檔案，應輸入何關鍵字？ ①url:pdf 生物 ②filetype:pdf 生物 ③生物–pdf ④生物｜pdf 。" },
+  { "id": 34, "ans": "3", "count": 1, "content": "何網站屬於「微網誌(Microblog)」？ ①Microsoft ②PHP-Nuke ③Twitter ④MLB 。" },
+  { "id": 35, "ans": "1", "count": 1, "content": "何種技術可以減輕編輯網頁的負擔，能夠更有效率的更換網頁樣式？ ①CSS ②Search Engine ③RSS ④GIS 。" },
+  { "id": 36, "ans": "2", "count": 1, "content": "創用 CC (Creative Commons) 授權條款不包括下列何種授權要素？ ①姓名標示 ②商業性 ③禁止改作 ④相同方式分享 。" },
+  { "id": 37, "ans": "2", "count": 1, "content": "LibreOffice 透過何種授權條款提供免費、優質、開放的軟體使用方式？ ①創用 CC ②MPL 軟體授權條款 ③特別 301 條款 ④免費軟體授權條款 。" },
+  { "id": 38, "ans": "4", "count": 1, "content": "創用 CC 以模組化的簡易條件，透過四大授權要素排列組合，提供了幾種公眾授權條款？ ①三種 ②四種 ③五種 ④六種 。" },
+  { "id": 39, "ans": "4", "count": 1, "content": "Google 使用關鍵字「filetype」搜尋網路上的特定檔案格式，無法找到何種類型的檔案？ ①.pdf ②.xls ③.doc ④.exe 。" },
+  { "id": 40, "ans": "2", "count": 1, "content": "何者是透過 XML 特性所制定的格式，讓網站管理者可以把網頁內容傳給訂閱戶？ ①Flicker ②RSS ③Blog ④Picasa 。" },
+  { "id": 41, "ans": "3", "count": 1, "content": "關於電腦中毒的處理方式何者不正確？ ①連上網路更新病毒碼 ②使用防毒軟體掃描全機 ③開啟電腦所有的連接埠 ④將重要檔案備份至確定無毒的外接硬碟 。" },
+  { "id": 42, "ans": "2", "count": 1, "content": "何種軟體會在未經使用者允許的情況下，自行安裝並蒐集使用者的個人資訊、網頁瀏覽習慣？ ①自由軟體 ②間諜軟體 ③共享軟體 ④公用軟體 。" },
+  { "id": 43, "ans": "4", "count": 1, "content": "何種方式是駭客利用常用字集用以破解密碼的手法？ ①網路釣魚 ②零時差攻擊 ③連線劫持 ④字典攻擊 。" },
+  { "id": 44, "ans": "1", "count": 1, "content": "有些電子郵件會附上假冒知名購物網站的超連結，以竊取使用者帳號與密碼，這種入侵行為稱為？ ①網路釣魚 ②字典攻擊 ③暴力攻擊 ④社交工程 。" },
+  { "id": 45, "ans": "3", "count": 1, "content": "駭客常會冒充企業內部的員工，向系統管理員謊稱忘記使用者密碼以盜取帳號，此方式稱為？ ①網路釣魚 ②SQL注入 ③社交工程 ④零時差攻擊 。" },
+  { "id": 46, "ans": "2", "count": 1, "content": "何種惡意程式的類型會偽裝成特殊工具程式吸引使用者下載以入侵電腦？ ①開機型病毒 ②特洛伊木馬程式 ③蠕蟲 ④巨集病毒 。" },
+  { "id": 47, "ans": "1", "count": 1, "content": "何種技術不必等音樂完全下載至電腦，就能直接在線上收聽音樂？ ①Streaming ②P2P ③BBS ④HTML 。" },
+  { "id": 48, "ans": "4", "count": 1, "content": "Conficker 病毒會自我複製並透過網路快速感染至其他有漏洞的電腦，此為何種電腦病毒？ ①開機型病毒 ②特洛伊木馬 ③巨集病毒 ④蠕蟲 。" },
+  { "id": 49, "ans": "4", "count": 1, "content": "關於 cookie 之敘述何者錯誤？ ①可紀錄上次拜訪的時間 ②利用技術提供個人化服務 ③可能侵犯個人隱私 ④會在電腦中自行複製 。" },
+  { "id": 50, "ans": "4", "count": 1, "content": "企業為保護內部資料避免被他人破壞或竊取，會在對外網路通道上安裝何者？ ①HTTPS ②UPS ③SET ④Firewall 。" },
+  { "id": 51, "ans": "2", "count": 1, "content": "關於網路釣魚(Phishing)之敘述何者錯誤？ ①主要目的在於竊取個人資料 ②是散播電腦病毒的一種方式 ③常見手法為冒充知名的網站 ④Yahoo！奇摩的安全圖章正是為了防範網路釣魚而產生。" },
+  { "id": 52, "ans": "2", "count": 1, "content": "關於電腦科技應用之敘述何者錯誤？ ①遠距教學可降低學習上的空間限制 ②行動條碼分為一維條碼和二維條碼 ③GPS 結合 GIS 技術可用來提供即時交通資訊以供駕駛者參考 ④工廠自動化是指利用電腦協助工廠中的設計、生產等工作。" },
+  { "id": 53, "ans": "2", "count": 1, "content": "欲將 4 GB 的 WAV 檔案儲存到容量大小為 1 GB 的音樂播放器中，應先將 WAV 檔案轉換為何種格式才能完全存入並可播放？ ①SWF ②MP3 ③DVD ④MPEG-2。" },
+  { "id": 54, "ans": "1", "count": 1, "content": "帶著行動設備到 24 小時便利商店透過無線網路連線查詢資料，表示該便利商店有提供何種存取服務(Access Services)？ ①WiFi ②ADSL ③ATM ④POS。" },
+  { "id": 55, "ans": "2", "count": 1, "content": "UNIX 作業系統中，如果想要更改某一個檔案的名稱，可以使用那一個命令？ ①rm ②mv ③more ④ls。" },
+  { "id": 56, "ans": "2", "count": 1, "content": "UNIX 主要的實作語言為何？ ①Java ②C ③C++ ④Pascal。" },
+  { "id": 57, "ans": "4", "count": 1, "content": "在 Windows 中，不小心將儲存於 C 磁碟中的重要檔案刪除了，可利用下列那一個視窗，來救回誤刪的檔案？ ①Windows 工作管理員 ②網路上的芳鄰 ③檔案總管 ④資源回收筒。" },
+  { "id": 58, "ans": "4", "count": 1, "content": "若 Google 雲端硬碟資料夾出現共享圖示，表示意義為何？ ①該資料夾名稱設定錯誤 ②該資料夾為捷徑，可用來快速啟動某個程式 ③該資料夾中存放有圖片檔案 ④該資料夾中存放的檔案，可被網路上的其他使用者讀取。" },
+  { "id": 59, "ans": "2", "count": 1, "content": "硬碟結構中的系統區，檔案的真實位置被完整記錄在那一區中？ ①硬碟分割區 ②檔案配置區 ③根目錄區 ④啟動區。" },
+  { "id": 60, "ans": "2", "count": 1, "content": "一般狀況下啟動 Windows 後，所呈現的畫面為何？ ①檔案總管 ②桌面 ③控制台 ④我的電腦。" },
+  { "id": 61, "ans": "2", "count": 1, "content": "Windows 作業系統中欲搜尋以 A 開頭的所有純文字檔，其最正確的搜尋條件為何？ ①A？.txt ②A*.txt ③A*.* ④A*.doc。" },
+  { "id": 62, "ans": "4", "count": 1, "content": "購買個人電腦後，為了節省費用，可優先考慮使用何種免費作業系統？ ①Windows ②macOS ③Android ④Linux。" },
+  { "id": 63, "ans": "2", "count": 1, "content": "何者可以掌管電腦系統的運作，進行資源分配、排解衝突、維護電腦系統的穩定？ ①檔案系統 ②作業系統 ③電子試算表 ④文書處理系統。" },
+  { "id": 64, "ans": "1", "count": 1, "content": "Windows 作業系統具有何種功能可自動偵測出硬體裝置？ ①PnP ②多工作業 ③GUI 介面 ④程序管理。" },
+  { "id": 65, "ans": "4", "count": 1, "content": "何者不是 ADSL 所使用的技術？ ①QAM ②DMT ③CAP ④FM。" },
+  { "id": 66, "ans": "2", "count": 1, "content": "RJ45 接腳共有幾對線？ ①2 ②4 ③6 ④8。" },
+  { "id": 67, "ans": "4", "count": 1, "content": "根據美國國家標準與技術研究院(NIST)對雲端的定義，何者不屬於其重要特徵？ ①自助式隨需服務 ②廣泛網路接取 ③快速且具彈性 ④不可量測服務使用狀況。" },
+  { "id": 68, "ans": "2", "count": 1, "content": "Google App Engine 屬於何種雲端服務？ ①IaaS ②PaaS ③SaaS ④CaaS。" },
+  { "id": 69, "ans": "2", "count": 1, "content": "雲端運算中，任何事物都可被視為一種服務，其最重要的基礎技術為何？ ①本機運算 ②虛擬化 ③異地備援 ④資料加密。" },
+  { "id": 70, "ans": "1", "count": 1, "content": "Amazon EC2 虛擬服務所採用的技術為何？ ①Xen Hypervisor ②VMware vSphere ③Microsoft Hyper-V ④Oracle VM VirtualBox。" },
+  { "id": 71, "ans": "1", "count": 1, "content": "網路書店亞馬遜（Amazon）的 Amazon EC2，提供何種類型的虛擬化服務？ ①IaaS ②PaaS ③SaaS ④CaaS。" },
+  { "id": 72, "ans": "3", "count": 1, "content": "提供雲端運算基礎設施即服務(IaaS)業者，其計價方式為何？ ①以服務內容計價 ②以服務時間分級計價 ③以儲存空間多寡計價 ④以使用人數方式計價。" },
+  { "id": 73, "ans": "2", "count": 1, "content": "提供雲端運算平台即服務(PaaS)業者，如：Microsoft 及 Google，其計價方式為何？ ①以服務內容計價 ②以服務時間分級計價 ③以儲存空間多寡計價 ④以使用人數方式計價。" },
+  { "id": 74, "ans": "4", "count": 1, "content": "提供雲端運算軟體即服務(SaaS)業者，如：Oracle，其計價方式為何？ ①以服務內容計價 ②以服務時間分級計價 ③以儲存空間多寡計價 ④以使用人數方式計價。" },
+  { "id": 75, "ans": "1", "count": 1, "content": "雲端運算的寄居架構(Hosted Architecture)需一個作業系統作為底層，其底層稱之為何？ ①Host OS ②Guest OS ③Hypervisor ④Virtual Machine。" },
+  { "id": 76, "ans": "2", "count": 1, "content": "一般而言，雲端運算的寄居架構(Hosted Architecture)主要針對何者進行虛擬化？ ①作業系統 ②硬體資源 ③應用程式 ④使用者介面。" },
+  { "id": 77, "ans": "3", "count": 1, "content": "何者不是虛擬化雲端環境興起後造成更多的安全問題？ ①更多系統漏洞 ②更容易利用相同環境進行測試 ③更多的垃圾郵件 ④更多來自殭屍網路的攻擊。" },
+  { "id": 78, "ans": "1", "count": 1, "content": "何者不是雲端安全聯盟(CSA)所指出雲端運算可能遭遇的安全威脅？ ①使用者隱私無法保障 ②濫用或利用雲端運算進行非法行為 ③不安全的使用者介面與 API ④共享環境所造成的議題。" },
+  { "id": 79, "ans": "4", "count": 1, "content": "雲端運算環境中，透過虛擬化技術後虛擬機器有那個項目不可動態配置調整？ ①CPU 核心數 ②記憶體大小 ③硬碟儲存空間 ④南、北橋晶片組。" },
+  { "id": 80, "ans": "3", "count": 1, "content": "關於「入侵偵測系統(IDS)」具有何種功能？ ①防止病毒感染檔案 ②預防網路詐騙 ③偵測可能危害內部網路安全的威脅 ④防止使用者連上惡意網站。" },
+  { "id": 81, "ans": "1", "count": 1, "content": "何項網路裝置的主要功能在保護內部網路，阻擋遠端非法使用者的入侵？ ①防火牆(Firewall) ②垃圾郵件過濾系統 ③特洛伊木馬 ④防毒軟體。" },
+  { "id": 82, "ans": "1", "count": 1, "content": "何者對於防範惡意軟體的入侵最有幫助的作法？ ①安裝防毒軟體 ②提高瀏覽器的安全性 ③採用 SSL 技術 ④採用 SET 技術。" },
+  { "id": 83, "ans": "1", "count": 1, "content": "關於防火牆之敘述何者正確？ A.主要功能是過濾封包 B.可以防止 Hacker 從特定連接埠入侵 C.可掃除病毒 D.只能用硬體完成 ①AB ②CD ③BC ④ABD。" },
+  { "id": 84, "ans": "1", "count": 1, "content": "何種網路設備或軟體可保護內部網路，以阻擋遠端使用者的非法使用？ ①防火牆(Firewall) ②垃圾郵件過濾系統 ③特洛伊木馬 ④集線器(Hub)。" },
+  { "id": 85, "ans": "2", "count": 1, "content": "一般大眾經常收到許多企業利用電子郵件濫發廣告文宣，此類郵件統稱為何？ ①行銷郵件 ②垃圾郵件 ③病毒郵件 ④惡意郵件。" },
+  { "id": 86, "ans": "2", "count": 1, "content": "關於「妥善保管客戶資料，確保客戶隱私保密性」是基於何項原則？ ①守法原則 ②保密原則 ③能力原則 ④誠信原則。" },
+  { "id": 87, "ans": "3", "count": 1, "content": "關於「系統檢查密碼設定時，會作某些特性的限制或規定」之敘述何者錯誤？ ①密碼有效性 ②禁止更新密碼時延用舊密碼 ③禁止不同使用者的密碼相同 ④密碼必須有一定困難度。" },
+  { "id": 88, "ans": "2", "count": 1, "content": "關於「資料外洩」是破壞了「資訊安全」中的那一面向？ ①可用性 ②機密性 ③不可否認性 ④完整性。" },
+  { "id": 89, "ans": "4", "count": 1, "content": "關於電腦系統安全之敘述何者最不妥當？ ①設定密碼 ②設定存取權限 ③管制設備放置地點人員進出 ④將資料複製給他人保管。" },
+  { "id": 90, "ans": "3", "count": 1, "content": "人工檢查資料輸入是否正確，是屬於何種安全管理？ ①行政安全 ②通訊安全 ③資料安全 ④程式安全。" },
+  { "id": 91, "ans": "1", "count": 1, "content": "關於資訊安全中系統備援之描述何者正確？ ①重要系統設備必須有備援措施 ②備援方法必須以 1：1 對應 ③遠端備援不必考慮 ④備援花費更多費用因此不必考慮。" },
+  { "id": 92, "ans": "3", "count": 1, "content": "何者不屬於密碼學演算法？ ①DES ②IDEA ③ZIP ④RSA。" },
+  { "id": 93, "ans": "1", "count": 1, "content": "關於「資料隱碼攻擊(SQL Injection)」之敘述何者最不妥當？ ①為使用者而非開發程式者造成 ②造成資料庫遭竄改或外洩 ③主要原因為程式缺乏輸入驗證 ④可跳過驗證並入侵系統。" },
+  { "id": 94, "ans": "3", "count": 1, "content": "何者不是密碼學原理最主要的應用？ ①數位簽章 ②數位浮水印 ③藍牙(Bluetooth)技術 ④公開金鑰基礎建設(PKI)。" },
+  { "id": 95, "ans": "2", "count": 1, "content": "何者不是資訊安全研究領域中，為維護資料安全的技術性防護方法？ ①密碼轉換 ②類比簽章 ③通行碼 ④授權矩陣。" },
+  { "id": 96, "ans": "2", "count": 1, "content": "何者不是數位簽章(Digital Signature) 的功能？ ①可證明信件來源 ②做為信件分類之用 ③可檢測信件是否遭竄改 ④發信人無法否認發過信。" },
+  { "id": 97, "ans": "3", "count": 1, "content": "何者不是「虛擬私人網路(VPN)」採用的技術原理？ ①穿隧技術 ②加解密技術 ③備援技術 ④身分鑑別技術。" },
+  { "id": 98, "ans": "1", "count": 1, "content": "何者可用來存放與管理通訊錄及信用卡資料，以確保交易時資料的隱密與安全？ ①電子錢包 ②商店伺服器 ③付款轉接站 ④認證中心。" },
+  { "id": 99, "ans": "4", "count": 1, "content": "何者是良好的電子郵件使用習慣？ ①收到信件趕快打開附檔 ②利用郵件傳遞機密資料 ③大量寄發廣告信 ④不輕易將電子郵件位址公佈。" },
+  { "id": 100, "ans": "2", "count": 1, "content": "數位浮水印(Digital Watermarking) 的主要應用為何？ ①上網撥接 ②電子商務的安全查核 ③網域名稱查詢 ④使用者管理。" },
+  { "id": 101, "ans": "1", "count": 1, "content": "關於「資訊系統安全措施」之敘述何者最不妥當？ ①資訊系統操作者統一保管密碼 ②資料加密 ③密碼變更 ④公佈之文件設定成唯讀。" },
+  { "id": 102, "ans": "3", "count": 1, "content": "何者與管制人員進入電腦系統之措施最不相關？ ①名牌 ②密碼 ③不斷電系統 ④門鎖。" },
+  { "id": 103, "ans": "4", "count": 1, "content": "關於資訊安全之敘述何者最不妥當？ ①設定存取權限 ②設定檔案密碼保護 ③隨時將檔案備份 ④設定檔案資料公開，任何人皆可以使用。" },
+  { "id": 104, "ans": "1", "count": 1, "content": "資訊安全種類中，關於硬體環境控制是屬於何種工作項目？ ①實體安全 ②資料安全 ③程式安全 ④系統安全。" },
+  { "id": 105, "ans": "3", "count": 1, "content": "關於安裝作業系統的安全，何者最不適當？ ①軟體的合法性 ②修補套件的安裝處理 ③破解版備份 ④不安全因素的修改檢驗。" },
+  { "id": 106, "ans": "2", "count": 1, "content": "可過濾、監視網路上的封包與通聯狀況，達到保護電腦的軟體為何？ ①防毒軟體 ②防火牆 ③瀏覽器 ④即時通。" },
+  { "id": 107, "ans": "4", "count": 1, "content": "關於系統災變復原計劃之敘述，何項最不適當？ ①計畫必須時時演習 ②對於備份資料應妥為準備 ③應尋找後備支援中心 ④如果能容忍風險就可不必做實地演練以節省成本。" },
+  { "id": 108, "ans": "4", "count": 1, "content": "在分散式開放系統中，何者不屬於安全管理之功能？ ①驗證 ②授權 ③稽查 ④回答(Answering)。" },
+  { "id": 109, "ans": "4", "count": 1, "content": "系統安全防護作業中，何種技術管理規劃最不妥當？ ①規劃安全稽核系統 ②採用防毒軟體 ③安排管理者接受訓練 ④規定密碼限定為有意義之名詞。" },
+  { "id": 110, "ans": "3", "count": 1, "content": "關於遠端資料進行傳輸時，為避免資料被竊取，可以採用何種保護措施？ ①資料壓縮 ②資料解壓縮 ③資料加密 ④資料解密。" },
+  { "id": 111, "ans": "2", "count": 1, "content": "何者是資訊安全系統為防止他人透過任何方式竊取資料，在伺服器端設定使用者權限？ ①監視性 ②資料存取控制 ③獨立性 ④識別。" },
+  { "id": 112, "ans": "2", "count": 1, "content": "關於資訊安全系統的架構中，何者屬於偵測性質？ ①識別 ②監視性(Surveillance) ③獨立性 ④資料取得控制。" },
+  { "id": 113, "ans": "4", "count": 1, "content": "如何最有效建立員工資訊安全意識？ ①從工作中建立 ②懲罰 ③獎勵 ④定期提醒與教育訓練。" },
+  { "id": 114, "ans": "2", "count": 1, "content": "關於「弱點法則」之敘述何者有誤？ ①重新安裝佈署機器後未立即修補是主因 ②利用弱點的攻擊只有 20% 發生在重要弱點的頭二個半衰期 ③半衰期指發現此弱點的系統將會減半 ④嚴重弱點一年內會被新弱點取代。" },
+  { "id": 115, "ans": "3", "count": 1, "content": "關於備份資料儲存之位置何者最不適當？ ①存放於另外一棟建築物 ②存放於專業資料保管公司 ③存放於同一間辦公室內 ④存放於防火防震保險櫃。" },
+  { "id": 116, "ans": "1", "count": 1, "content": "關於資訊人員安全管理措施之敘述何者有誤？ ①單位中每一個人都可操作同一部電腦 ②對操作人員做好適當訓練 ③製作識別卡管制進出 ④將無用報表銷毀。" },
+  { "id": 117, "ans": "3", "count": 1, "content": "關於資訊安全中公開鑰匙碼(Public Key)法之敘述何者有誤？ ①可減少因傳送 key 而洩密 ②送方與受方各有一 key ③接收方的 key 應讓送方瞭解以供轉換 ④接受方的 key 不必由傳送方傳送。" },
+  { "id": 118, "ans": "4", "count": 1, "content": "關於資訊安全中電子簽名保密技術之敘述何者正確？ ①不需解碼 ②較公開鑰匙密碼法簡便 ③採用光筆簽名以供辨識 ④利用數字來代替票據必須由人親自簽名的方法。" },
+  { "id": 119, "ans": "3", "count": 1, "content": "關於電腦安全防護的措施中，何者是同時針對實體及資料的防護措施？ ①保留日誌檔 ②管制上機次數 ③不斷電系統 ④人員定期輪調。" },
+  { "id": 120, "ans": "2", "count": 1, "content": "何者是不正確的「系統安全」措施？ ①加密保護機密資料 ②系統管理者統一保管使用者密碼 ③使用者不定期更改密碼 ④網路公用檔案設定成「唯讀」。" },
+  { "id": 121, "ans": "2", "count": 1, "content": "完善的資安系統應在使用者、資料、OS 間設立足夠關卡，防止使用者存取不屬於自己的資料，這屬於何種概念？ ①獨立性 ②資料取得控制(Access Control) ③監視性 ④識別。" },
+  { "id": 122, "ans": "2", "count": 1, "content": "關於 IT 災害復原(ITDR)的首要工作為何？ ①軟體重置 ②環境重置 ③系統重置 ④資料重置。" },
+  { "id": 123, "ans": "2", "count": 1, "content": "關於 IT 災害復原(ITDR)，那些人員參與較恰當？ ①程式設計人員 ②組織全員 ③系統操作人員 ④資料處理人員。" },
+  { "id": 124, "ans": "2", "count": 1, "content": "系統安全漏洞發生的主要原因為何？ ①硬體速度過慢 ②系統程式開發之疏失 ③儲存空間不足 ④電源不穩定。" },
+  { "id": 125, "ans": "3", "count": 1, "content": "身分證字號的最後一碼是用來做為何種檢驗？ ①範圍 ②總數 ③檢查號碼的正確性 ④一致性。" },
+  { "id": 126, "ans": "3", "count": 1, "content": "防火牆(Firewall)的主要作用為何？ ①防火 ②防搶 ③防止資料被竊取 ④硬體上的保護。" },
+  { "id": 127, "ans": "1", "count": 1, "content": "在整批處理系統下做異動處理時，常保留幾代的歷史資料(祖父、父、子)？ ①3 代 ②4 代 ③1 代 ④2 代。" },
+  { "id": 128, "ans": "2", "count": 1, "content": "政府機關公務內網資訊遭竊的最主要威脅來自何者？ ①位址假造 ②社交工程與零時差攻擊結合 ③國際恐怖份子 ④實體安全防護不佳。" },
+  { "id": 129, "ans": "3", "count": 1, "content": "為了防止資料庫遭破壞後無法回復，除了定期備份外尚須進行哪項措施？ ①管制使用 ②人工記錄 ③隨時記錄變動日誌(Log)檔 ④程式修改。" },
+  { "id": 130, "ans": "1", "count": 1, "content": "關於維護資料安全之敘述何者最不妥當？ ①為避免困擾系統密碼一旦設定便不宜變更 ②資料必須定時備份 ③備份應與系統設備分開放置 ④設置使用日誌詳細記錄。" },
+  { "id": 131, "ans": "4", "count": 1, "content": "為了讓郵件在傳送過程中不被駭客破壞，可以藉由電子郵件哪項功能達成？ ①壓縮 ②反駭客 ③密件副本 ④加密。" },
+  { "id": 132, "ans": "2", "count": 1, "content": "訂定災害防治標準作業程序及重要資料的備份，是屬何種時期所作的工作？ ①過渡時期 ②災變前 ③災害發生時 ④災變復原時期。" },
+  { "id": 133, "ans": "4", "count": 1, "content": "資料庫中重要資料欄的更新作業，為保留其過程以供核驗，可以利用何種檔案？ ①密碼檔 ②關聯檔 ③組態檔 ④日誌檔。" },
+  { "id": 134, "ans": "4", "count": 1, "content": "那一個不屬於資訊安全的威脅？ ①人為疏失 ②天災 ③機件故障 ④讀取資料。" },
+  { "id": 135, "ans": "3", "count": 1, "content": "密碼術中替代(Substitution)是基本加密技術，若明碼為 MADAM，何者不是替代後的密文？ ①1301040113 ②NBEBN ③AMADM ④NZWZN。" },
+  { "id": 136, "ans": "1", "count": 1, "content": "從資訊安全的角度而言，何種作法最不適當？ ①轉寄信件時將前寄件人的名單引入信中 ②不任意留下私密資料 ③不傳遞機密文件 ④使用防毒軟體。" },
+  { "id": 137, "ans": "3", "count": 1, "content": "尋找第二儲存空間是資料備份的安全做法，這種做法不包括何者？ ①與專業儲存公司合作 ②使用防火保險櫃 ③儲存在同一辦公室內另一部電腦上 ④存放在另外一棟建築物。" },
+  { "id": 138, "ans": "3", "count": 1, "content": "關於資料安全之敘述何者正確？ ①純屬技術問題 ②純屬管理問題 ③不但是技術問題且是管理問題 ④既不是技術也不是管理問題。" },
+  { "id": 139, "ans": "1", "count": 1, "content": "資料錯誤檢核方式中，何者最不常用？ ①存取權限檢查 ②檢查號碼檢查 ③型態檢查 ④範圍檢查。" },
+  { "id": 140, "ans": "4", "count": 1, "content": "資訊安全中針對人為因素所做的事前預防措施，何項是不必要的？ ①門禁管制 ②技術性管制 ③內部管制 ④網路資料不開放。" },
+  { "id": 141, "ans": "1", "count": 1, "content": "關於資訊系統的災害，何者最嚴重？ ①資料喪失 ②主管離職 ③硬體故障 ④軟體喪失。" },
+  { "id": 142, "ans": "4", "count": 1, "content": "電子簽章法中，所稱「加密」通常是利用那一種方式來達成？ ①CA 憑證 ②宇宙放射法則 ③Unicode 法 ④數學演算法將文件以亂碼處理。" },
+  { "id": 143, "ans": "1", "count": 1, "content": "關於「零時差攻擊(Zero-Day Attack)」之敘述何者最妥當？ ①在軟體弱點被發現但尚未有修補方法前出現的攻擊 ②在午夜發動攻擊 ③弱點掃描與攻擊發生在同一天 ④攻擊與修補發生在同一天。" },
+  { "id": 144, "ans": "2", "count": 1, "content": "關於安全的祕密金鑰密碼系統，何者不是該系統提供之功能？ ①保護資訊機密 ②鑑定發方之身分 ③自動修正資訊內容 ④確保資訊完整性。" },
+  { "id": 145, "ans": "1", "count": 1, "content": "關於使用隨身碟之敘述何者最不妥當？ ①只要不開啟其中內容，就算連接到電腦上也是安全的 ②容易傳回病毒 ③媒體容易遺失 ④資料易遭竊取。" },
+
+  { "ans": "2", "count": 1, "category": "security","content": "1. 在量販店內，商品包裝上所貼的「條碼(Barcode)」係協助結帳及庫存盤點之用，則該條碼在此方面之資料處理作業上係屬於下列何者？ ①輸入設備 ②輸入媒體 ③輸出設備 ④輸出媒體 。" },
+  { "ans": "2", "count": 1, "category": "security","content": "2. 有關「CPU 及記憶體處理」之說明， 下列何者「不正確」？ ①控制單元負責指揮協調各單元運作 ②I/O 負責算術運算及邏輯運算 ③ALU 負責算術 運算及邏輯運算 ④記憶單元儲存程式指令及資料 。" },
+  { "ans": "2", "count": 1, "category": "security","content": "3. 有關二進位數的表示法，下列何者「不正確」？ ①101 ② 1A ③1 ④11001 。" },
+  { "ans": "2", "count": 1, "category": "security","content": "4. 負責電腦開機時執行系統自動偵測及支援相關應用程式， 具輸入輸出功能的元件為下列何者？ ①DOS ②BIOS ③I/O ④RAM 。" },
+  { "ans": "4", "count": 1, "category": "security","content": "5. 在處理器中位址匯流排有 32 條， 可以定出多少記憶體位址？ ①512 MB ②1GB ③2 GB ④ 4GB 。" },
+  { "ans": "4", "count": 1, "category": "security","content": "6. 下列何者屬於揮發性記憶體？ ①Hard Disk ②Flash Memory ③ROM ④ RAM 。" },
+  { "ans": "2", "count": 1, "category": "security","content": "7. 下列技術何者為一個處理器中含有兩個執行單元， 可以同時執行兩個並行執行緒， 以提升處理器的運算效能與多工作業的能力？ ①超執行緒(Hyper Thread) ②雙核心(Dual Core) ③超純量(Super Scalar) ④單指令多資料(Single Instruction Multiple Data) 。" },
+  { "ans": "1", "count": 1, "category": "security","content": "8. 下列技術何者為將一個處理器模擬成多個邏輯處理器，以提升程式執行之效能？ ①超執行緒(Hyper Thread) ②雙核心(Dual Core) ③超純量( Super Scalar) ④單指令多資料( Single Instruction Multiple Data) 。" },
+  { "ans": "2", "count": 1, "category": "security","content": "9. 有關記憶體的敘述， 下列何者「不正確」？ ①CPU 中的暫存器執行速度比主記憶體快 ②快取磁碟(Disk Cache) 是利用記憶體中的快取記憶體(Cache Memory) 來存放資料 ③在系統軟體中，透過軟體與輔助儲存體來擴展主記憶體容量，使數個大型程式得以同時放在主記憶體內執行的技術是虛擬記憶體(Virtual Memory) ④個人電腦上大都有 Level 1( L1 ) 及 Level 2 ( L2 ) 快取記憶體(Cache Memory)， 其中 L1 快取的速度較快，但容量較小 。" },
+  { "ans": "4", "count": 1, "category": "security","content": "10. 有關電腦衡量單位之敘述，下列何者「不正確」？ ①衡量印表機解析度的單位是 DPI ( Dots Per Inch) ②磁帶資料儲存密度的單位是 BPI (Bytes PerInch) ③衡量雷射印表機列印速度的單位是 PPM ( Pages Per Minute) ④通訊線路傳輸速率的單位是 BPS (Bytes Per Second) 。" },
+  { "ans": "1", "count": 1, "category": "security","content": "11. 有關電腦儲存資料所需記憶體的大小排序，下列何者正確？ ① 1TB＞ 1GB＞1MB＞1KB ②1KB＞1GB＞1 MB＞1 TB ③1GB＞1 MB＞1 TB＞1KB ④ 1TB＞ 1KB＞ 1MB＞1 GB 。" },
+  { "ans": "2", "count": 1, "category": "security","content": "12. 以微控制器為核心， 並配合適當的周邊設備，以執行特定功能，主要是用來控制、監督或輔助特定設備的裝置，其架構仍屬於一種電腦系統( 包含處理器、記憶體、輸入與輸出等硬體元素)， 目前最常見的應用有 PDA、手機及資訊家電， 這種系統稱為下列何者？ ①伺服器系統 ②嵌入式系統 ③分散式系統 ④個人電腦系統 。" },
+  { "ans": "4", "count": 1, "category": "security","content": "13. 有 A、B 兩個大小相同的檔案， A 檔案儲存在硬碟連續的位置，而 B 檔案儲存在硬碟分散的位置，因此 A 檔案的存取時間比 B 檔案少， 下列何者為主要影響因素？ ①CPU 執行時間( Execution Time) ②記憶體存取時間( Memory Access Time) ③傳送時間( Transfer Time) ④搜尋時間( Seek Time) 。" },
+  { "ans": "3", "count": 1, "category": "security","content": "14. 有關資料表示， 下列何者「不正確」？ ① 1Byte=8bits ② 1KB=210 Bytes ③ 1MB=215 Bytes ④1GB=230 Bytes 。" },
+  { "ans": "4", "count": 1, "category": "security","content": "15. 有關資料儲存媒體之敘述，下列何者正確？ ①儲存資料之光碟片，可以直接用餐巾紙沾水以同心圓擦拭，以保持資料儲存良好狀況 ②MO ( Magnetic Optical) 光碟機所使用的光碟片，外型大小及儲存容量均與 CD-ROM 相同 ③RAM 是一個經設計燒錄於硬體設備之記憶體 ④可消除及可規劃之唯讀記憶體的縮寫為 EPROM 。" },
+  { "ans": "1", "count": 1, "category": "security","content": "16. 下列何者為 RAID(Redundant Array of Independent Disks) 技術的主要用途？ ①儲存資料 ②傳輸資料 ③播放音樂 ④播放影片 。" },
+  { "ans": "1", "count": 1, "category": "security","content": "17. 硬碟的轉速會影響磁碟機在讀取檔案時所需花的下列何種時間？ ①旋轉延遲(Rotational Latency) ②尋找時間( Seek Time) ③資料傳輸( Transfer Time) ④磁頭切換( Head Switching) 。" },
+  { "ans": "3", "count": 1, "category": "security","content": "18. 微處理器與外部連接之各種訊號匯流排， 何者具有雙向流通性？ ①控制匯流排 ②狀態匯流排 ③資料匯流排 ④位址匯流排 。" },
+  { "ans": "3", "count": 1, "category": "security","content": "19. 下列何者是「美國標準資訊交換碼」的簡稱？ ①IEEE ②CNS ③ASCII ④ ISO 。" },
+  { "ans": "1", "count": 1, "category": "security","content": "20. 下列何者內建於中央處理器(CPU)做為 CPU 暫存資料，以提升電腦的效 能？ ①快取記憶體(Cache) ②快閃記憶體( Flash Memory) ③靜態隨機存取記憶體(SRAM) ④動態隨機存取記憶體( DRAM) 。" },
+  { "ans": "1", "count": 1, "category": "security","content": "21. 下列何者為制定網際網路( Internet) 相關標準的機構？ ①IETF ②IEEE ③ ANSI ④ISO 。" },
+  { "ans": "3", "count": 1, "category": "security","content": "22. 下列何者為專有名詞「WWW」之中文名稱？ ①區域網路 ②網際網路 ③全球資訊網 ④社群網路 。" },
+  { "ans": "4", "count": 1, "category": "security","content": "23. 下列何者不是合法的 IP 位址？ ①120.80. 40.20 ② 140. 92.1.50 ③192.83. 166.5 ④258.128.33.24 。" },
+  { "ans": "1", "count": 1, "category": "security","content": "24. 有關網際網路之敘述，下列何者「不正確」？ ①IPv4 之子網路與 IPv 6 之子網路只要兩端直接以傳輸線相連即可互相傳送資料 ②IPv4 之位址可以被轉化為 IPv6 之位址 ③IPv 6 之位址有 128 位元 ④IPv 4 之位址有 32 位元 。" },
+  { "ans": "4", "count": 1, "category": "security","content": "25. 在 OSI( Open System Interconnection) 通信協定中， 電子郵件的服務屬於下列哪一層？ ①傳送層(Transport Layer) ②交談層(Session Layer) ③表示層 (Presentation Layer) ④應用層(Application Layer) 。" },
+  { "ans": "4", "count": 1, "category": "security","content": "26. 有關藍芽(Bluetooth) 技術特性之敘述，下列何者「不正確」？ ①傳輸距離約 10 公尺 ②低功率 ③使用 2. 4GHz 頻段 ④傳輸速率約為 10 Mbps 。" },
+  { "ans": "2", "count": 1, "category": "security","content": "27. 有關網際網路協定之敘述，下列何者「不正確」？ ①TCP 是一種可靠傳輸 ②HTTP 是一種安全性的傳輸 ③HTTP 使用 TCP 來傳輸資料 ④UDP 是一種不可靠傳輸 。" },
+  { "ans": "1", "count": 1, "category": "security","content": "28. 下列何者是較為安全的加密傳輸協定？ ①SSH ②HTTP ③FTP ④SMTP 。" },
+  { "ans": "4", "count": 1, "category": "security","content": "29. 物聯網(IoT)通訊物件通常具備移動性，為支援這樣的通訊特性，需求的網路技術主要為下列何者？ ①分散式運算 ②網格運算 ③跨網域運算能力 ④物件動態連結 。" },
+  { "ans": "1", "count": 1, "category": "security","content": "30. 若電腦教室內的電腦皆以雙絞線連結至某一台集線器上， 則此種網路架構為下列何者？ ①星狀拓樸 ②環狀拓樸 ③匯流排拓樸 ④網狀拓樸 。" },
+  { "ans": "2", "count": 1, "category": "security","content": "31. 下列設備，何者可以讓我們在只有一個 IP 的狀況下，提供多部電腦上網？ ①集線器(Hub) ②IP 分享器 ③橋接器(Bridge) ④數據機( Modem) 。" },
+  { "ans": "2", "count": 1, "category": "security","content": "32. 當一個區域網路過於忙碌，打算將其分開成兩個子網路時，此時應加裝下列何種裝置？ ①路徑器(Router) ②橋接器( Bridge) ③閘道器(Gateway) ④網路連接器(Connector) 。" },
+  { "ans": "4", "count": 1, "category": "security","content": "33. 下列何種電腦通訊傳輸媒體之傳輸速度最快？ ①同軸電纜 ②雙絞線 ③電話線 ④光纖 。" },
+  { "ans": "4", "count": 1, "category": "security","content": "34. 下列何者為真實的 MAC( Media Access Control) 位址？ ①00:05:J6 :0D: 91 :K1 ② 10.0.0.1 -255.255.255. 0 ③00:05:J6 :0D: 91: B 1 ④00:D0 :A0 :5C:C 1:B 5 。" },
+  { "ans": "2", "count": 1, "category": "security","content": "35. 下列何種 IEEE Wireless LAN 標準的傳輸速率最低？ ① 802.11 a ②802.11b ③802.11g ④802.11n 。" },
+  { "ans": "3", "count": 1, "category": "security","content": "36. NAT(Network Address Translation) 的用途為下列何者？ ①電腦主機與 IP位址的轉換 ②IP 位址轉換為實體位址 ③組織內部私有 IP 位址與網際網路合法 IP 位址的轉換 ④封包轉送路徑選擇 。" },
+  { "ans": "2", "count": 1, "category": "security","content": "37. 下列何種服務可將 Domain Name 對應為 IP 位址？ ①WINS ②DNS ③ DHCP ④Proxy 。" },
+  { "ans": "3", "count": 1, "category": "security","content": "38. 下列何者不是 NFC ( Near Field Communication) 的功用？ ①電子錢包 ②電子票證 ③行車導航 ④資料交換 。" },
+  { "ans": "2", "count": 1, "category": "security","content": "39. 有關 xxx@abc.edu. tw 之敘述， 下列何者「不正確」？ ①它代表一個電子郵件地址 ②若為了方便，可以省略@ ③xxx 代表一個電子郵件帳號 ④abc.edu.tw 代表某個電子郵件伺服器 。" },
+  { "ans": "3", "count": 1, "category": "security","content": "40. 有關 OTG( On-The-Go)之敘述，下列何者正確？ ①可以將兩個隨身碟連接複製資料 ②可以提昇隨身碟資料傳送之速度 ③可以將隨身碟連接到手機，讓手機存取隨身碟之資料 ④可以讓隨身碟直接透過 WiFi 傳送資料到雲端 。" },
+  { "ans": "1", "count": 1, "category": "security","content": "41. 根據美國國家標準與技術研究院( NIST) 對雲端的定義，下列何者「不是」雲端運算(Cloud Computing) 之服務模式？ ①內容即服務（ Content as aService, Caa S） ②基礎架構即服務（ Infrastructure as a Service, Iaa S） ③平台即服務（ Platform as a Service, Paa S） ④軟體即服務（ Software as a Service, Saa S） 。" },
+  { "ans": "2", "count": 1, "category": "security","content": "42. 下列何種雲端服務可供使用者開發應用軟體？ ①Software as a Service(Saa S) ②Platform as a Service ( Paa S) ③Information as a Service ( IaaS) ④ Infrastructure as a Service ( Iaa S) 。" },
+  { "ans": "4", "count": 1, "category": "security","content": "43. 下列何者為「B2C」電子商務之交易模式？ ①公司對公司 ②客戶對公司 ③客戶對客戶 ④公司對客戶 。" },
+  { "ans": "1", "count": 1, "category": "security","content": "44. 下列何者為 Class A 網路的內定子網路遮罩？ ① 255.0. 0.0 ② 255.255. 0.0 ③255.255.255.0 ④255.255.255.255 。" },
+  { "ans": "3", "count": 1, "category": "security","content": "45. IPv6 網際網路上的 IP address，每個 IP address 總共有幾個位元組？ ① 4 Bytes ② 8 Bytes ③ 16 Bytes ④20 Bytes 。" },
+  { "ans": "4", "count": 1, "category": "security","content": "46. 下列何者為 DHCP 伺服器之功能？ ①提供網路資料庫的管理功能 ②提供檔案傳輸的服務 ③提供網頁連結的服務 ④動態的分配 IP 給使用者使用 。" },
+  { "ans": "3", "count": 1, "category": "security","content": "47. 有關乙太網路(Ethernet) 之敘述， 下列何者「不正確」？ ①是一種區域網路 ②採用 CSMA／CD 的通訊協定 ③網路長度可至 2500 公尺 ④傳送時不保證服務品質 。" },
+  { "ans": "1", "count": 1, "category": "security","content": "48. 一個 Class C 類型網路可用的主機位址有多少個？ ①254 ②256 ③128 ④524 。" },
+  { "ans": "3", "count": 1, "category": "security","content": "49. 下列何者為正確的 Internet 服務及相對應的預設通訊埠？ ①TELNET：21 ②FTP：23 ③SMTP：25 ④HTTP：82 。" },
+  { "ans": "2", "count": 1, "category": "security","content": "50. 有關使用直譯程式( Interpreter) 將程式翻譯成機器語言之敘述， 下列何者正確？ ①直譯程式( Interpreter) 與編譯程式(Compiler) 翻譯方式一樣 ②直譯程式每次轉譯一行指令後即執行 ③直譯程式先執行再翻譯成目的程式 ④直譯程式先翻譯成目的程式，再執行之 。" },
+  { "ans": "1", "count": 1, "category": "security","content": "51. 編譯程式(Compiler) 將高階語言翻譯至可執行的過程中， 下列何者是連結程式( Linker)負責連結的標的？ ①目的程式與所需之副程式 ②原始程式與目的程式 ③副程式與可執行程式 ④原始程式與可執行程式 。" },
+  { "ans": "2", "count": 1, "category": "security","content": "52. Linux 是屬何種系統？ ①應用系統(Application Systems) ②作業系統(Operation Systems) ③資料庫系統(Database Systems) ④編輯系統( Editor Systems) 。" },
+  { "ans": "4", "count": 1, "category": "security","content": "53. 下列何種作業系統沒有圖形使用者操作介面？ ①Linux ②Windows Server ③Mac OS ④MS-DOS 。" },
+  { "ans": "3", "count": 1, "category": "security","content": "54. 下列何者「不是」多人多工之作業系統？ ①Linux ②Solaris ③MS-DOS ④ Windows Server 。" },
+  { "ans": "3", "count": 1, "category": "security","content": "55. 下列何者為 Linux 作業系統之「系統管理者」的預設帳號？ ① administrator ②manager ③root ④supervisor 。" },
+  { "ans": "3", "count": 1, "category": "security","content": "56. Windows 登入時，若鍵入的密碼其「大小寫不正確」會導致下列何種結果？ ①仍可以進入 Windows ②進入 Windows 的安全模式 ③要求重新輸入密碼 ④Windows 將先關閉，並重新開機 。" },
+  { "ans": "3", "count": 1, "category": "security","content": "57. 下列何種技術是利用硬碟空間來解決主記憶體空間之不足？ ①分時技術(Time Sharing) ②同步記憶體 (Concurrent Memory) ③虛擬記憶體 (Virtual Memory) ④多工技術 ( Multitasking) 。" },
+  { "ans": "4", "count": 1, "category": "security","content": "58. 電腦中負責資源管理的軟體是下列何種？ ①編譯程式 (Compiler) ②公用程式 (Utility) ③應用程式 (Application) ④作業系統 (Operating System) 。" },
+  { "ans": "2", "count": 1, "category": "security","content": "59. 下列何者為 Linux 系統所採用的檔案系統？ ①NTFS ②XFS ③HTFS ④ vms 。" },
+  { "ans": "1", "count": 1, "category": "security","content": "60. 下列流程圖所對應的 C/C++指令為何？ ①do...while ②while ③ switch...case ④if...then...else 。", "img": "https://meee.com.tw/VnWV0rs" },
+  { "ans": "4", "count": 1, "category": "security","content": "61. 下列流程圖所對應的 C/C++指令為何？ ①do...while ②while ③ switch...case ④if...then...else 。", "img": "https://meee.com.tw/wmaJZDC" },
+  { "ans": "4", "count": 1, "category": "security","content": "62. 下列流程圖所對應的 C/C++指令為何？ ①do...while ②while ③ switch...case ④if...then...else 。", "img": "https://meee.com.tw/7aEb145" },
+  { "ans": "2", "count": 1, "category": "security","content": "63. 下列流程圖所對應的 C/C++程式為何？ ①圖1 ②圖2 ③圖3 ④圖4 ", "img": "https://meee.com.tw/rRCJRtC" },
+  { "ans": "3", "count": 1, "category": "security","content": "64. 程式片段之敘述， 何者正確？ ①輸入三個變數 ②找出輸入數值最小值 ③找出輸入數值最大值 ④輸出結果為 the output is:c 。" , "img": "https://meee.com.tw/sLmBo0w"},
+  { "ans": "3", "count": 1, "category": "security","content": "65. 下列何者「不是」C/ C++語言基本資料型態？ ①void ②int ③main ④ char 。" },
+  { "ans": "3", "count": 1, "category": "security","content": "66. 下列何者在 C/C++語言中視為 false？ ①- 100 ②- 1 ③ 0 ④ 1 。" },
+  { "ans": "4", "count": 1, "category": "security","content": "67. 有關 C/C++語言中變數及常數之敘述，下列何者「不正確」？ ①變數用來存放資料，以利程式執行，可以是整數、浮點、字串的資料型態 ②程式中可以操作、改變變數的值 ③常數存放固定數值，可以是整數、浮點、字串的資料型態 ④程式中可以操作、改變常數值 。" },
+  { "ans": "3", "count": 1, "category": "security","content": "68. While(sum<=1000) sum=sum+30;程式片段，何者敘述正確？ ①小括號應該改成大括號 ②sum = sum +30; 必須使用大括號括起來 ③While 應該改成 while ④While ( sum＜=1000 )之後應該要有分號 。" },
+  { "ans": "3", "count": 1, "category": "security","content": "69. 有關 C/C++語言結構控制語法，下列何者正確？ ①while (x＞0 ) do { y=5 ;} ②for (x＜10 ) { y=5;} ③while (x＞0 | | x＜ 5) { y=5;} ④do ( x＞0 ) { y=5	} while ( x＜1 ) 。" },
+  { "ans": "4", "count": 1, "category": "security","content": "70. C/C++ 語言指令 switch 的流程控制變數「不可以」使用何種資料型態？ ①char ②int ③byte ④double 。" },
+  { "ans": "4", "count": 1, "category": "security","content": "71. C/C++ 語言中限定一個主體區塊，使用下列何種符號？ ①( ) ②/* */ ③\" \"④{ } 。" },
+  { "ans": "4", "count": 1, "category": "security","content": "72. 下列 C/C++程式片段，輸出結果何者正確？ ①1 ②2 ③3 ④4 。", "img": "https://meee.com.tw/FGtqo4i" },
+  { "ans": "3", "count": 1, "category": "security","content": "73. 下列 C/C++程式片段，輸出結果何者正確？ ①1 ②2 ③3 ④4 。" , "img": "https://meee.com.tw/ChFf35N" },
+  { "ans": "4", "count": 1, "category": "security","content": "74. 程式片段int y=!(12>5||3<=5&&3>x)?7:9;，若 x = 2 ，則 y 值為何？ ①2 ②3 ③7 ④9 。" },
+  { "ans": "3", "count": 1, "category": "security","content": "75. 程式片段int x; x=(5<=3&&’A’<’F’)?3:4，其 x 之輸出結果何者正確？ ①2 ②3 ③ 4 ④5 。" },
+  { "ans": "2", "count": 1, "category": "security","content": "76. 程式片段int a=0,b=0,c=0; int x=(a<b+4)，執行後 x 值為何？ ①0 ② 1 ③ 2 ④ 3 。" },
+  { "ans": "2", "count": 1, "category": "security","content": "77. 下列 C/C++程式片段， f(8, 3) 輸出為何？ ①3 ② 5 ③ 8 ④ 11 。", "img": "https://meee.com.tw/Npbg5UU"},
+  { "ans": "3", "count": 1, "category": "security","content": "78. 對於下列 C/C++程式，何者敘述正確？ ①將 a 及 b 兩矩陣相加後，儲存至 c 矩陣 ②若 a[2 ][ 2] ={{1 , 2 }, { 3, 4 }} 及 b[ 2][2 ]= {{ 1,0},{2,- 3}}， 執行結束後 c[2 ][2 ]= {{ 5,6}, { 11,12 }} ③若 a 及 b 均為 2x 2 矩陣，最內層 for 迴圈執行 8 次 ④若 a 及 b 均為 2x2 矩陣， 最外層 for 迴圈執行 4 次 。" , "img": "https://meee.com.tw/lclQCh"},
+  { "ans": "3", "count": 1, "category": "security","content": "79. 對於下列 C/C++程式片段，何者敘述有誤？ ①程式輸出為 4x+-4y+8=0 ②若(x 1,x2 )及(y1, y2 )視為兩個二維平面座標，程式功能為計算直線方程式 ③若(x 1,x2 )及(y1, y2 )視為兩個二維平面座標，則直線方程式的斜率為- 4/3 ④若(x 1,x2 ),( y1,y2 ) 及( 3 ,5)視為三個二維平面座標，則會構成一個直角三角 形 。" , "img": "https://meee.com.tw/iyRyquf"},
+  { "ans": "1", "count": 1, "category": "security", "content": "80. 有關電腦犯罪之敘述，下列何者「不正確」？ ①犯罪容易察覺 ②採用手法較隱藏 ③高技術性的犯罪活動 ④與一般傳統犯罪活動不同 。" },
+  { "ans": "2", "count": 1, "category": "security", "content": "81. 「訂定災害防治標準作業程序及重要資料的備份」是屬何種時期所做的工作？ ①過渡時期 ②災變前 ③災害發生時 ④災變復原時期 。" },
+  { "ans": "2", "count": 1, "category": "security", "content": "82. 下列何者為受僱來嘗試利用各種方法入侵系統，以發覺系統弱點的技術人員？ ①黑帽駭客(Black Hat Hacker) ②白帽駭客(White Hat Hacker) ③電腦蒐證(Collection of Evidence)專家 ④密碼學(Cryptography) 專家 。" },
+  { "ans": "1", "count": 1, "category": "security", "content": "83. 下列何種類型的病毒會自行繁衍與擴散？ ①電腦蠕蟲(Worms) ②特洛伊木馬程式(Trojan Horses) ③後門程式( Trap Door) ④邏輯炸彈 ( TimeBombs) 。" },
+  { "ans": "3", "count": 1, "category": "security", "content": "84. 有關對稱性加密法與非對稱性加密法的比較之敘述，下列何者「不正確」？ ①對稱性加密法速度較快 ②非對稱性加密法安全性較高 ③RSA 屬於對稱性加密法 ④使用非對稱性加密法時，每個人各自擁有一對公開金匙與祕密金匙，欲提供認證性時，使用者將資料用自己的祕密金匙加密送給對方，對方再用相對的公開金匙解密 。" },
+  { "ans": "2", "count": 1, "category": "security", "content": "85. 下列何種資料備份方式只有儲存當天修改的檔案？ ①完全備份 ②遞增備份 ③差異備份 ④隨機備份 。" },
+  { "ans": "3", "count": 1, "category": "security", "content": "86. 下列何種入侵偵測系統( Intrusion Detection Systems) 是利用特徵( Signature)資料庫及事件比對方式，以偵測可能的攻擊或事件異常？ ①主機導向(Host-Based) ②網路導向(Network-Based) ③知識導向(Knowledge-Based) ④行為導向(Behavior-Based) 。" },
+  { "ans": "4", "count": 1, "category": "security", "content": "87. 下列何種網路攻擊手法是藉由傳遞大量封包至伺服器，導致目標電腦的網路或系統資源耗盡， 服務暫時中斷或停止，使其正常用戶無法存取？ ①偷窺( Sniffers) ②欺騙( Spoofing) ③垃圾訊息( Spamming) ④阻斷服務(Denial of Service) 。" },
+  { "ans": "2", "count": 1, "category": "security", "content": "88. 下列何種網路攻擊手法是利用假節點號碼取代有效來源或目的 IP 位址之行為？ ①偷窺(Sniffers) ②欺騙( Spoofing) ③垃圾資訊( Spamming) ④阻斷服務(Denial of Service) 。" },
+  { "ans": "4", "count": 1, "category": "security", "content": "89. 有關數位簽章之敘述，下列何者「不正確」？ ①可提供資料傳輸的安全性 ②可提供認證 ③有利於電子商務之推動 ④可加速資料傳輸 。" },
+  { "ans": "4", "count": 1, "category": "security", "content": "90. 下列何者為可正確且及時將資料庫複製於異地之資料庫復原方法？ ①異動紀錄( Transaction Logging) ②遠端日誌(Remote Journaling) ③電子防護(Electronic Vaulting) ④遠端複本(Remote Mirroring) 。" },
+  { "ans": "1", "count": 1, "category": "security", "content": "91. 字母\"B\"的 ASCII 碼以二進位表示為\"01000010\"，若電腦傳輸內容為\"101000010 \"， 以便檢查該字母的正確性，則下列敘述何者正確？ ①使用奇數同位元檢查 ②使用偶數同位元檢查 ③使用二進位數檢查 ④不做任何正確性的檢查 。" },
+  { "ans": "4", "count": 1, "category": "security", "content": "92. 下列何種方法「不屬於」資訊系統安全的管理？ ①設定每個檔案的存取權限 ②每個使用者執行系統時， 皆會在系統中留下變動日誌( Log) ③不同使用者給予不同權限 ④限制每人使用時間 。" },
+  { "ans": "4", "count": 1, "category": "security", "content": "93. 有關資訊中心的安全防護措施之敘述，下列何者「不正確」？ ①重要檔案每天備份三份以上， 並分別存放 ②加裝穩壓器及不斷電系統 ③設置煙霧及熱度感測器等設備，以防止災害發生 ④雖是不同部門， 資料也可以任意交流，以便支援合作，順利完成工作 。" },
+  { "ans": "4", "count": 1, "category": "security", "content": "94. 有關電腦中心的資訊安全防護措施之敘述，下列何者「不正確」？ ①資訊中心的電源設備必須有穩壓器及不斷電系統 ②机房應選用耐火、絕緣、散熱性良好的材料 ③需要資料管制室， 做為原始資料的驗收、輸出報表的整理及其他相關資料保管 ④所有備份資料應放在一起以防遺失 。" },
+  { "ans": "4", "count": 1, "category": "security", "content": "95. 下列何種檔案類型較不會受到電腦病毒感染？ ①含巨集之檔案 ②執行檔 ③系統檔 ④純文字檔 。" },
+  { "ans": "3", "count": 1, "category": "security", "content": "96. 有關重要的電腦系統如醫療系統、航空管制系統、戰情管制系統及捷運系統，在設計時通常會考慮當機的回復問題。下列何種方式是一般最常用的做法？ ①隨時準備當機時，立即回復人工作業，並時常加以演習 ②裝設自動控制溫度及防災設備，最重要應有 UPS 不斷電配備 ③同時裝設兩套或多套系統，以俾應變當機時之轉換運作 ④與同機型之電腦使用單位或電腦中心訂立應變時之支援合約，以便屆時作支援作業 。" },
+  { "ans": "4", "count": 1, "category": "security", "content": "97. 有關資料保護措施， 下列敘述何者「不正確」？ ①定期備份資料庫 ②機密檔案由專人保管 ③留下重要資料的使用紀錄 ④資料檔案與備份檔案保存在同一磁碟機 。" },
+  { "ans": "3", "count": 1, "category": "security", "content": "98. 如果一個僱員必須被停職，他的網路存取權應在何時關閉？ ①停職後一週 ②停職後二週 ③給予他停職通知前 ④不需關閉 。" },
+  { "ans": "2", "count": 1, "category": "security", "content": "99. 有關資訊系統安全措施，下列敘述何者「不正確」？ ①加密保護機密資料 ②系統管理者統一保管使用者密碼 ③使用者不定期更改密碼 ④網路公用檔案設定成「唯讀」 。" },
+  { "ans": "4", "count": 1, "category": "security", "content": "100. 下列何種動作進行時，電源中斷可能會造成檔案被破壞？ ①程式正在計算 ②程式等待使用者輸入資料 ③程式從磁碟讀取資料 ④程式正在對磁碟寫資料 。" },
+  { "ans": "2", "count": 1, "category": "security", "content": "101. 下列何者「不是」資訊安全所考慮的事項？ ①確保資訊內容的機密性， 避免被別人偷窺 ②電腦執行速度 ③定期做資料備份 ④確保資料內容的完整性，防止資訊被竄改 。" },
+  { "ans": "2", "count": 1, "category": "security", "content": "102. 下列何者「不是」數位簽名的功能？ ①證明信件的來源 ②做為信件分類之用 ③可檢測信件是否遭竄改 ④發信人無法否認曾發過信件 。" },
+  { "ans": "2", "count": 1, "category": "security", "content": "103. 在網際網路應用程式服務中， 防火牆是一項確保資訊安全的裝置，下列何者「不是」防火牆檢查的對象？ ①埠號(Port Number) ②資料內容 ③來源端主機位址 ④目的端主機位址 。" },
+  { "ans": "3", "count": 1, "category": "security", "content": "104. 有關電腦病毒傳播方式，下列何者正確？ ①只要電腦有安裝防毒軟體， 就不會感染電腦病毒 ②病毒不會透過電子郵件傳送 ③不隨意安裝來路不明的軟體， 以降低感染電腦病毒的風險 ④病毒無法透過即時通訊軟體傳遞 。" },
+  { "ans": "4", "count": 1, "category": "security", "content": "105. 有關電腦病毒之敘述，下列何者正確？ ①電腦病毒是一種黴菌，會損害電腦組件 ②電腦病毒入侵電腦之後，在關機之後，病毒仍會留在 CPU 及記憶體中 ③使用偵毒軟體是避免感染電腦病毒的唯一途徑 ④電腦病毒是一種程式， 可經由隨身碟、電子郵件、網路散播 。" },
+  { "ans": "2", "count": 1, "category": "security", "content": "106. 有關電腦病毒之特性，下列何者「不正確」？ ①具有自我複製之能力 ②病毒不須任何執行動作，便能破壞及感染系統 ③病毒會破壞系統之正常運作 ④病毒會寄生在開機程式 。" },
+  { "ans": "2", "count": 1, "category": "security", "content": "107. 下列何種網路攻擊行為係假冒公司之名義發送偽造的網站連結，以騙取使用者登入並盜取個人資料？ ①郵件炸彈 ②網路釣魚 ③阻絕攻擊 ④網路謠言 。" },
+  { "ans": "3", "count": 1, "category": "security", "content": "108. 下列何種密碼設定較安全？ ①初始密碼如 9999 ②固定密碼如生日 ③隨機亂碼 ④英文名字 。" },
+  { "ans": "3", "count": 1, "category": "security", "content": "109. 有關資訊安全之概念，下列何者「不正確」？ ①將檔案資料設定密碼保護，只有擁有密碼的人才能使用 ②將檔案資料設定存取權權限， 例如允許讀取，不准寫入 ③將檔案資料設定成公開， 任何人都可以使用 ④將檔案資料備份， 以備檔案資料被破壞時，可以回存 。" },
+  { "ans": "1", "count": 1, "category": "security", "content": "110. 下列何種技術可用來過濾並防止網際網路中未經認認可的資料進入內部， 以維護個人電腦或區域網路的安全？ ①防火牆 ②防毒掃描 ③網路流量控制 ④位址解析 。" },
+  { "ans": "2", "count": 1, "category": "security", "content": "111. 網站的網址以「https://」開始， 表示該網站具有何種機制？ ①使用 SET安全機制 ②使用 SSL 安全機制 ③使用 Small Business 機制 ④使用XOOPS 架設機制 。" },
+  { "ans": "1", "count": 1, "category": "security", "content": "112. 下列何者「不屬於」電腦病毒的特性？ ①電腦關機後會自動消失 ②可隱藏一段時間再發作 ③可附在正常檔案中 ④具自我複製的能力 。" },
+  { "ans": "4", "count": 1, "category": "security", "content": "113. 資訊安全定義之完整性( Integrity) 係指文件經傳送或儲存過程中，必須證明其內容並未遭到竄改或偽造。下列何者「不是」完整性所涵蓋之範圍？ ①可歸責性(Accountability) ②鑑別性(Authenticity) ③不可否認性(Non-Repudiation) ④可靠性(Reliability) 。" },
+  { "ans": "1", "count": 1, "category": "security", "content": "114. 「設備防竊、門禁管制及防止破壞設備」是屬於下列何種資訊安全之要求？ ①實體安全 ②資料安全 ③程式安全 ④系統安全 。" },
+  { "ans": "1", "count": 1, "category": "security", "content": "115. 「將資料定期備份」是屬於下列何種資訊安全之特性？ ①可用性 ②完整性 ③機密性 ④不可否認性 。" },
+  { "ans": "3", "count": 1, "category": "security", "content": "116. 有關非對稱式加解密演算法之敘述， 下列何者「不正確」？ ①提供機密性保護功能 ②加解密速度一般較對稱式加解密演算法慢 ③需將金鑰安全的傳送至對方，才能解密 ④提供不可否認性功能 。" },
+  { "ans": "3", "count": 1, "category": "security", "content": "117. 下列何種機制可允許分散各地的區域網路，透過公共網路安全地連接在一起？ ①WAN ②BAN ③VPN ④WSN 。" },
+  { "ans": "4", "count": 1, "category": "security", "content": "118. 加密技術「不能」提供下列何種安全服務？ ①鑑別性 ②機密性 ③完整性 ④可用性 。" },
+  { "ans": "2", "count": 1, "category": "security", "content": "119. 有關公開金鑰基礎建設( Public Key Infrastructure, PKI) 之敘述，下列何者「不正確」？ ①係基於非對稱式加解密演算法 ②公開金鑰必須對所有人保密 ③可驗證身分及資料來源 ④可用私密金鑰簽署將公布之文件 。" },
+  { "ans": "2", "count": 1, "category": "security", "content": "120. 下列哪一個單位為我國受理網域名稱註冊申請的機構？ ①IETF ②TWNIC ③ICANN ④NIC 。" },
+  { "ans": "1", "count": 1, "category": "security", "content": "121. 下列何者主要負責研議與制定台灣網際網路相關之技術標準？ ①TWNIC ②ICANN ③CNNIC ④IANA 。" },
+  { "ans": "3", "count": 1, "category": "security", "content": "122. 根據我國刑法規定，無故刪除或變更他人電腦之電磁紀錄，致生損害於公眾或他人者，處幾年以下有期徒刑？ ①一年 ②三年 ③五年 ④七年 。" },
+  { "ans": "2", "count": 1, "category": "security", "content": "123. 下列何者行為屬於我國刑法所禁止之「妨害電腦使用」罪？ ①在網路上公開他人聯絡資訊 ②無故輸入他人帳號密碼而入侵他人電腦 ③在部落格發表毀謗他人之言論 ④下載未經授權之影片 。" },
+  { "ans": "4", "count": 1, "category": "security", "content": "124. 有關個人資料保護法之敘述，下列何者正確？ ①僅適用於電子化個人資料 ②僅政府機關受其約束 ③蒐集個人資料不需要告知當事人 ④當事人有權要求查詢或請求閱覽其個人資料 。" },
+  { "ans": "1", "count": 1, "category": "security", "content": "125. 為了保護著作權人的權益，我國制定了下列哪一項法律？ ①著作權法 ②商標法 ③專利法 ④公平交易法 。" },
+  { "ans": "2", "count": 1, "category": "security", "content": "126. 若是在網路上散佈謠言，致使他人名譽受損，可能會觸犯下列哪一項罪名？ ①詐欺罪 ②毀謗罪 ③竊盜罪 ④背信罪 。" },
+  { "ans": "3", "count": 1, "category": "security", "content": "127. 有關電子簽章法之目的，下列何者正確？ ①為了防止電腦病毒傳播 ②為了推廣線上遊戲 ③為了促進電子化政府及電子商務之發展 ④為了限制網路言論自由 。" },
+  { "ans": "4", "count": 1, "category": "security", "content": "128. 下列何種行為符合資訊倫理規範？ ①使用破解軟體 ②隨意轉傳未經證實的網路訊息 ③在討論區發表攻擊性言論 ④尊重他人之智慧財產權 。" },
+  { "ans": "1", "count": 1, "category": "security", "content": "129. 有關網路成癮之預防，下列何者較為適當？ ①適度安排戶外活動，避免長時間沉迷於網路空間 ②為了追趕進度，熬夜上網 ③將所有休閒時間都用來玩線上遊戲 ④拒絕與真實世界的人溝通 。" }
+
+
+];
+
+
+
+const examData = rawData;
+let errorStats = JSON.parse(localStorage.getItem('webDesign_Errors')) || {};
+
+function toggleSetup() {
+    const p = document.getElementById('exam-setup-panel');
+    p.style.display = p.style.display === 'block' ? 'none' : 'block';
+}
+
+function getImgHtml(imgSrc) {
+    if (!imgSrc || imgSrc.trim() === "") return "";
+    
+    // 自動判斷：如果是 meee.com.tw 的網址且沒有副檔名，就自動補上 .png
+    let realSrc = imgSrc;
+    if (imgSrc.includes("meee.com.tw") && !imgSrc.endsWith(".jpg")) {
+        realSrc = imgSrc + ".jpg";
+    }
+    
+    return `<img src="${realSrc}" class="q-img" alt="題目圖片" onerror="this.style.display='none'">`;
+}
+
+function render(filterMode) {
+    document.getElementById('exam-setup-panel').style.display = 'none';
+    const list = document.getElementById('main-list');
+    const stats = document.getElementById('stats');
+    document.getElementById('quiz-result').style.display = 'none';
+    list.innerHTML = '';
+    
+    let filtered = [];
+    if (filterMode === 0) filtered = examData;
+    else if (filterMode === 'security') filtered = examData.filter(q => q.category === 'security');
+    else if (filterMode === 1) filtered = examData.filter(q => q.count === 1 && q.category !== 'security');
+    else filtered = examData.filter(q => q.count === filterMode);
+
+    stats.innerHTML = `顯示 ${filtered.length} 題 / 總計 ${examData.length} 題`;
+
+    filtered.forEach(q => {
+        const div = document.createElement('div');
+        div.className = `q-item ${q.category === 'security' ? '' : 'count-' + q.count}`;
+        if (q.category === 'security') div.style.borderLeft = "5px solid #ff922b";
+        
+        div.innerHTML = `
+            <div class="q-no">#${q.id} ${q.category === 'security' ? '<span style="color:#ff922b">[資訊共用]</span>' : ''}</div>
+            <div class="ans-tag">答案：${q.ans}</div>
+            <div class="q-content">${q.content}</div>
+            ${getImgHtml(q.img)}
+        `;
+        list.appendChild(div);
+    });
+    window.scrollTo(0, 0);
+}
+
+function startCustomExam() {
+    const s = parseInt(document.getElementById('single-count').value) || 0;
+    const sec = parseInt(document.getElementById('security-count').value) || 0;
+    const m = parseInt(document.getElementById('multi-count').value) || 0;
+
+    const singlePool = examData.filter(q => q.count === 1 && q.category !== 'security').sort(() => 0.5 - Math.random());
+    const secPool = examData.filter(q => q.category === 'security').sort(() => 0.5 - Math.random());
+    const multiPool = examData.filter(q => q.count > 1).sort(() => 0.5 - Math.random());
+
+    const selected = [...singlePool.slice(0, s), ...secPool.slice(0, sec), ...multiPool.slice(0, m)].sort(() => 0.5 - Math.random());
+    
+    if (selected.length === 0) return alert("請設定題數");
+    document.getElementById('exam-setup-panel').style.display = 'none';
+    renderQuiz(selected);
+}
+
+function renderQuiz(selected) {
+    const list = document.getElementById('main-list');
+    list.innerHTML = '';
+    selected.forEach((q, index) => {
+        const div = document.createElement('div');
+        div.className = 'q-item';
+        const type = q.count === 1 ? 'radio' : 'checkbox';
+        let options = '';
+        for(let i=1; i<=4; i++) { options += `<label><input type="${type}" name="q-${q.id}" value="${i}"> (${i}) 選項 </label>`; }
+        div.innerHTML = `
+            <div class="q-no">測驗第 ${index + 1} 題 (#${q.id})</div>
+            <div class="q-content">${q.content}</div>
+            ${getImgHtml(q.img)}
+            <div class="quiz-options" data-ans="${q.ans}" id="box-${q.id}">${options}</div>
+            <div id="fb-${q.id}"></div>
+        `;
+        list.appendChild(div);
+    });
+    const b = document.createElement('button');
+    b.innerHTML = "提交答案";
+    b.style.cssText = "width:90%; height:50px; margin:20px 5%; background:#1e8e3e; color:white; font-size:1.1rem; border:none; border-radius:10px;";
+    b.onclick = submitExam;
+    list.appendChild(b);
+    window.scrollTo(0, 0);
+}
+
+function submitExam() {
+    const boxes = document.querySelectorAll('.quiz-options');
+    let correct = 0;
+    boxes.forEach(box => {
+        const id = box.id.replace('box-', '');
+        const real = box.getAttribute('data-ans').split('').sort().join('');
+        const user = Array.from(box.querySelectorAll('input:checked')).map(i => i.value).sort().join('');
+        const fb = document.getElementById(`fb-${id}`);
+        if (user === real) { correct++; fb.innerHTML = `<div class="feedback correct">✅ 正確</div>`; }
+        else { 
+            fb.innerHTML = `<div class="feedback wrong">❌ 錯誤 (答案：${box.getAttribute('data-ans')})</div>`; 
+            errorStats[id] = (errorStats[id] || 0) + 1; 
+        }
+        box.querySelectorAll('input').forEach(i => i.disabled = true);
+    });
+    localStorage.setItem('webDesign_Errors', JSON.stringify(errorStats));
+    const score = Math.round((correct / boxes.length) * 100);
+    const res = document.getElementById('quiz-result');
+    res.style.display = 'block';
+    res.innerHTML = `<h3>得分：${score}</h3><button onclick="showRank()" class="btn-rank" style="background:#6f42c1; color:white; padding:10px; border-radius:10px; border:none;">查看錯題排行</button>`;
+    window.scrollTo(0, 0);
+}
+
+function showRank() {
+    const list = document.getElementById('main-list');
+    const sorted = Object.entries(errorStats).map(([id, count]) => ({ id: parseInt(id), count })).sort((a, b) => b.count - a.count);
+    if (sorted.length === 0) return list.innerHTML = '<p style="text-align:center; padding: 20px;">目前尚無紀錄</p>';
+    list.innerHTML = `<div style="text-align:center; padding:10px;"><button onclick="clearStats()" style="background:#ff4d4f; color:white; border:none; padding:10px; border-radius:5px; width:90%">🗑️ 清空所有紀錄</button></div>`;
+    sorted.slice(0, 30).forEach((item, index) => {
+        const q = examData.find(x => x.id === item.id);
+        if(q) {
+            const div = document.createElement('div');
+            div.className = 'rank-row';
+            div.innerHTML = `
+                <div class="rank-header" onclick="this.nextElementSibling.style.display = (this.nextElementSibling.style.display === 'block' ? 'none' : 'block')">
+                    <div style="font-size:0.9rem;"><strong>${index+1}.</strong> #${q.id} ${q.content.substring(0, 15)}...</div>
+                    <div style="color:red">錯 ${item.count} 次 ▾</div>
+                </div>
+                <div class="rank-content">
+                    <div class="ans-tag">答案：${q.ans}</div>
+                    <div style="font-weight:bold;">${q.content}</div>
+                    ${getImgHtml(q.img)}
+                </div>
+            `;
+            list.appendChild(div);
+        }
+    });
+}
+
+function clearStats() {
+    if(confirm("確定要清空紀錄嗎？")) { localStorage.removeItem('webDesign_Errors'); errorStats = {}; showRank(); }
+}
+
+render(0);
+</script>
+</body>
+</html>
