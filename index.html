@@ -16,7 +16,6 @@
         .container { max-width: 100%; margin: auto; background: white; min-height: 100vh; padding-bottom: 50px; }
         h2 { font-size: 1.2rem; color: #1a73e8; text-align: center; padding: 15px 0; margin: 0; background: #fff; border-bottom: 1px solid #eee; }
         
-        /* 導覽列 */
         .filter-bar { 
             position: sticky; top: 0; background: white; padding: 10px 5px; 
             border-bottom: 1px solid #ddd; display: flex; gap: 5px; flex-wrap: wrap; 
@@ -31,12 +30,10 @@
         .btn-all { background-color: #1a73e8 !important; }
         .btn-sec { background-color: #ff922b !important; }
 
-        /* 測驗面板 */
         .exam-setup { background: #fff9db; padding: 15px; margin: 10px; border-radius: 8px; border: 2px dashed #fcc419; display: none; }
         .setup-row { display: flex; flex-direction: column; gap: 8px; align-items: center; }
         input[type="number"] { width: 50px; padding: 5px; border: 1px solid #ccc; border-radius: 5px; text-align: center; }
 
-        /* 題目樣式 */
         .q-item { padding: 15px; border-bottom: 8px solid #f4f7f9; border-left: 5px solid transparent; }
         .count-1 { border-left-color: #4dabf7; }
         .count-2 { border-left-color: #eee960; } 
@@ -48,17 +45,17 @@
         .q-no { color: #888; font-size: 0.7rem; margin-bottom: 5px; }
         .q-content { font-size: 0.95rem; font-weight: 500; line-height: 1.5; color: #202124; }
 
-        /* 選項區塊 */
-        .quiz-options { margin-top: 15px; display: flex; flex-direction: column; gap: 8px; }
-        .quiz-options label { padding: 12px; border: 1px solid #dadce0; border-radius: 10px; display: flex; align-items: center; background: #fff; }
-        .quiz-options input { margin-right: 12px; width: 20px; height: 20px; }
+        .pagination-ctrl { display: flex; justify-content: center; align-items: center; gap: 10px; padding: 20px 10px; background: #fff; border-top: 1px solid #eee; }
+        .page-select { padding: 8px; border-radius: 5px; border: 1px solid #ddd; font-size: 0.9rem; background: #f8f9fa; }
+        .btn-page { background: #1a73e8; color: white; padding: 8px 12px; border-radius: 5px; min-width: 70px; font-size: 0.85rem; }
+        .btn-page:disabled { background: #ccc; }
 
         .feedback { margin-top: 10px; padding: 10px; border-radius: 5px; font-weight: bold; text-align: center; }
         .correct { background: #e6f4ea; color: #1e8e3e; }
         .wrong { background: #fce8e6; color: #d93025; }
 
         .rank-row { border-bottom: 1px solid #eee; }
-        .rank-header { padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .rank-header { padding: 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
         .rank-content { display: none; padding: 15px; background: #f9f9f9; border-left: 5px solid #6f42c1; }
         #stats { text-align: center; font-size: 0.7rem; color: #666; padding: 5px; background: #fafafa; }
     </style>
@@ -95,7 +92,9 @@
 </div>
 
 <script>
-// 資料區 (保持你的原始資料不變)
+// --- 資料區 請放在這裡 ---
+// const rawData = [ ... ];
+// ------------------------
 const rawData = [
  { "id": 169, "ans": "134", "count": 3, "content": "對於資料庫正規化（Normalization）的敘述，何者正確？ ①正規化的程度越高，資料的重複性會降低 ②正規化的程度越高，資料存取效能亦會越高 ③ 正規化的程度越高，資料表格的數量亦會增多 ④正規化程序可避免更新異常 。" },
   { "id": 170, "ans": "1234", "count": 4, "content": "對於 Web-based 資料庫應用系統的效能，影響因素有那些？ ① 網路頻寬 ②同時上線的使用者數量 ③資料庫的設計 ④資料庫伺服器硬體等級 。" },
@@ -907,16 +906,16 @@ const rawData = [
 ];
 
 
-// --- 自動編號邏輯 (解決重複與 undefined) ---
+
+// 初始化編號 (加上 toString 確保比對一致)
 rawData.forEach((q, index) => {
-    if (q.category === 'security') {
-        q.realId = "S" + (1000 + index); // 資安題從 S1000 開始
-    } else {
-        q.realId = index + 1; // 專業題重新排號 1, 2, 3...
-    }
+    q.realId = (q.category === 'security' ? "S" + (1000 + index) : (index + 1)).toString();
 });
 
 let errorStats = JSON.parse(localStorage.getItem('webDesign_Errors')) || {};
+let currentPage = 1;
+const pageSize = 30;
+let currentFilteredData = [];
 
 function toggleSetup() {
     const p = document.getElementById('exam-setup-panel');
@@ -926,31 +925,37 @@ function toggleSetup() {
 function getImgHtml(imgSrc) {
     if (!imgSrc) return "";
     let url = imgSrc.trim();
-    if (url.includes("meee.com.tw") && !url.toLowerCase().endsWith(".png") && !url.toLowerCase().endsWith(".jpg")) {
-        url += ".png";
-    }
+    if (url.includes("meee.com.tw") && !url.toLowerCase().endsWith(".png") && !url.toLowerCase().endsWith(".jpg")) url += ".png";
     return `<img src="${url}" class="q-img" onerror="this.style.display='none'">`;
 }
 
 function render(filterMode) {
     document.getElementById('exam-setup-panel').style.display = 'none';
     document.getElementById('quiz-result').style.display = 'none';
+    
+    if (filterMode === 0) currentFilteredData = rawData;
+    else if (filterMode === 'security') currentFilteredData = rawData.filter(q => q.category === 'security');
+    else if (filterMode === 1) currentFilteredData = rawData.filter(q => q.count === 1 && q.category !== 'security');
+    else currentFilteredData = rawData.filter(q => q.count === filterMode);
+
+    currentPage = 1;
+    displayCurrentPage();
+}
+
+function displayCurrentPage() {
     const list = document.getElementById('main-list');
     list.innerHTML = '';
     
-    let filtered = [];
-    if (filterMode === 0) filtered = rawData;
-    else if (filterMode === 'security') filtered = rawData.filter(q => q.category === 'security');
-    else if (filterMode === 1) filtered = rawData.filter(q => q.count === 1 && q.category !== 'security');
-    else filtered = rawData.filter(q => q.count === filterMode);
+    const totalPages = Math.ceil(currentFilteredData.length / pageSize);
+    const start = (currentPage - 1) * pageSize;
+    const pageData = currentFilteredData.slice(start, start + pageSize);
 
-    document.getElementById('stats').innerHTML = `顯示 ${filtered.length} 題 / 總計 ${rawData.length} 題`;
+    document.getElementById('stats').innerHTML = `顯示第 ${currentPage}/${totalPages} 頁 (共 ${currentFilteredData.length} 題)`;
 
-    filtered.forEach(q => {
+    pageData.forEach(q => {
         const div = document.createElement('div');
         div.className = `q-item ${q.category === 'security' ? '' : 'count-' + q.count}`;
         if (q.category === 'security') div.style.borderLeft = "5px solid #ff922b";
-        
         div.innerHTML = `
             <div class="q-no">#${q.realId} ${q.category === 'security' ? '<span style="color:#ff922b">[資訊共用]</span>' : ''}</div>
             <div class="ans-tag">答案：${q.ans}</div>
@@ -959,6 +964,71 @@ function render(filterMode) {
         `;
         list.appendChild(div);
     });
+
+    if (totalPages > 1) {
+        const nav = document.createElement('div');
+        nav.className = 'pagination-ctrl';
+        let options = '';
+        for(let i=1; i<=totalPages; i++) {
+            options += `<option value="${i}" ${i === currentPage ? 'selected' : ''}>第 ${i} 頁</option>`;
+        }
+        nav.innerHTML = `
+            <button class="btn-page" onclick="changePage(-1)" ${currentPage === 1 ? 'disabled' : ''}>上一頁</button>
+            <select class="page-select" onchange="jumpToPage(this.value)">${options}</select>
+            <button class="btn-page" onclick="changePage(1)" ${currentPage === totalPages ? 'disabled' : ''}>下一頁</button>
+        `;
+        list.appendChild(nav);
+    }
+    window.scrollTo(0, 0);
+}
+
+function changePage(step) {
+    currentPage += step;
+    displayCurrentPage();
+}
+
+function jumpToPage(page) {
+    currentPage = parseInt(page);
+    displayCurrentPage();
+}
+
+// 修正後的排行功能
+function showRank() {
+    document.getElementById('exam-setup-panel').style.display = 'none';
+    document.getElementById('quiz-result').style.display = 'none';
+    const list = document.getElementById('main-list');
+    
+    const sorted = Object.entries(errorStats)
+        .map(([id, count]) => ({ id: id.toString(), count }))
+        .sort((a, b) => b.count - a.count);
+
+    if (sorted.length === 0) {
+        list.innerHTML = '<p style="text-align:center; padding: 20px;">目前尚無錯題紀錄</p>';
+        return;
+    }
+
+    list.innerHTML = `<div style="text-align:center; padding:10px;"><button onclick="clearStats()" style="background:#ff4d4f; color:white; border:none; padding:10px; border-radius:5px; width:90%">🗑️ 清空紀錄</button></div>`;
+    
+    sorted.slice(0, 50).forEach((item, index) => {
+        // 關鍵修復點：使用 toString() 進行比對
+        const q = rawData.find(x => x.realId === item.id);
+        if(q) {
+            const div = document.createElement('div');
+            div.className = 'rank-row';
+            div.innerHTML = `
+                <div class="rank-header" onclick="const c = this.nextElementSibling; c.style.display = (c.style.display === 'block' ? 'none' : 'block')">
+                    <div style="font-size:0.9rem; flex:1;"><strong>${index+1}.</strong> #${q.realId} ${q.content.substring(0, 15)}...</div>
+                    <div style="color:red; font-size:0.8rem; margin-left:10px;">錯 ${item.count} 次 ▾</div>
+                </div>
+                <div class="rank-content">
+                    <div class="ans-tag">答案：${q.ans}</div>
+                    <div style="font-weight:bold; font-size:0.95rem;">${q.content}</div>
+                    ${getImgHtml(q.img)}
+                </div>
+            `;
+            list.appendChild(div);
+        }
+    });
     window.scrollTo(0, 0);
 }
 
@@ -966,13 +1036,10 @@ function startCustomExam() {
     const s = parseInt(document.getElementById('single-count').value) || 0;
     const sec = parseInt(document.getElementById('security-count').value) || 0;
     const m = parseInt(document.getElementById('multi-count').value) || 0;
-
     const singlePool = rawData.filter(q => q.count === 1 && q.category !== 'security').sort(() => 0.5 - Math.random());
     const secPool = rawData.filter(q => q.category === 'security').sort(() => 0.5 - Math.random());
     const multiPool = rawData.filter(q => q.count > 1).sort(() => 0.5 - Math.random());
-
     const selected = [...singlePool.slice(0, s), ...secPool.slice(0, sec), ...multiPool.slice(0, m)].sort(() => 0.5 - Math.random());
-    
     if (selected.length === 0) return alert("請設定題數");
     document.getElementById('exam-setup-panel').style.display = 'none';
     renderQuiz(selected);
@@ -986,16 +1053,8 @@ function renderQuiz(selected) {
         div.className = 'q-item';
         const type = q.count === 1 ? 'radio' : 'checkbox';
         let options = '';
-        for(let i=1; i<=4; i++) { 
-            options += `<label><input type="${type}" name="q-${q.realId}" value="${i}"> (${i}) 選項 </label>`; 
-        }
-        div.innerHTML = `
-            <div class="q-no">測驗第 ${index + 1} 題 (#${q.realId})</div>
-            <div class="q-content">${q.content}</div>
-            ${getImgHtml(q.img)}
-            <div class="quiz-options" data-ans="${q.ans}" id="box-${q.realId}">${options}</div>
-            <div id="fb-${q.realId}"></div>
-        `;
+        for(let i=1; i<=4; i++) { options += `<label><input type="${type}" name="q-${q.realId}" value="${i}"> (${i}) 選項 </label>`; }
+        div.innerHTML = `<div class="q-no">測驗第 ${index + 1} 題 (#${q.realId})</div><div class="q-content">${q.content}</div>${getImgHtml(q.img)}<div class="quiz-options" data-ans="${q.ans}" id="box-${q.realId}">${options}</div><div id="fb-${q.realId}"></div>`;
         list.appendChild(div);
     });
     const b = document.createElement('button');
@@ -1010,14 +1069,12 @@ function submitExam() {
     const boxes = document.querySelectorAll('.quiz-options');
     let correct = 0;
     boxes.forEach(box => {
-        const id = box.id.replace('box-', '');
+        const id = box.id.replace('box-', '').toString();
         const real = box.getAttribute('data-ans').split('').sort().join('');
         const user = Array.from(box.querySelectorAll('input:checked')).map(i => i.value).sort().join('');
         const fb = document.getElementById(`fb-${id}`);
-        if (user === real) { 
-            correct++; 
-            fb.innerHTML = `<div class="feedback correct">✅ 正確</div>`; 
-        } else { 
+        if (user === real) { correct++; fb.innerHTML = `<div class="feedback correct">✅ 正確</div>`; }
+        else { 
             fb.innerHTML = `<div class="feedback wrong">❌ 錯誤 (答案：${box.getAttribute('data-ans')})</div>`; 
             errorStats[id] = (errorStats[id] || 0) + 1; 
         }
@@ -1031,47 +1088,7 @@ function submitExam() {
     window.scrollTo(0, 0);
 }
 
-function showRank() {
-    document.getElementById('exam-setup-panel').style.display = 'none';
-    document.getElementById('quiz-result').style.display = 'none';
-    const list = document.getElementById('main-list');
-    
-    const sorted = Object.entries(errorStats)
-        .map(([id, count]) => ({ id, count }))
-        .sort((a, b) => b.count - a.count);
-
-    if (sorted.length === 0) {
-        list.innerHTML = '<p style="text-align:center; padding: 20px;">目前尚無錯題紀錄</p>';
-        return;
-    }
-
-    list.innerHTML = `<div style="text-align:center; padding:10px;"><button onclick="clearStats()" style="background:#ff4d4f; color:white; border:none; padding:10px; border-radius:5px; width:90%">🗑️ 清空紀錄</button></div>`;
-    
-    sorted.slice(0, 30).forEach((item, index) => {
-        const q = rawData.find(x => x.realId == item.id);
-        if(q) {
-            const div = document.createElement('div');
-            div.className = 'rank-row';
-            div.innerHTML = `
-                <div class="rank-header" onclick="this.nextElementSibling.style.display = (this.nextElementSibling.style.display === 'block' ? 'none' : 'block')">
-                    <div style="font-size:0.9rem;"><strong>${index+1}.</strong> #${q.realId} ${q.content.substring(0, 15)}...</div>
-                    <div style="color:red">錯 ${item.count} 次 ▾</div>
-                </div>
-                <div class="rank-content" style="display:none;">
-                    <div class="ans-tag">答案：${q.ans}</div>
-                    <div style="font-weight:bold; font-size:0.95rem;">${q.content}</div>
-                    ${getImgHtml(q.img)}
-                </div>
-            `;
-            list.appendChild(div);
-        }
-    });
-    window.scrollTo(0, 0);
-}
-
-function clearStats() {
-    if(confirm("確定要清空嗎？")) { localStorage.removeItem('webDesign_Errors'); errorStats = {}; showRank(); }
-}
+function clearStats() { if(confirm("確定要清空嗎？")) { localStorage.removeItem('webDesign_Errors'); errorStats = {}; showRank(); } }
 
 render(0);
 </script>
