@@ -925,8 +925,42 @@ function toggleSetup() {
 function getImgHtml(imgSrc) {
     if (!imgSrc) return "";
     let url = imgSrc.trim();
-    if (url.includes("meee.com.tw") && !url.toLowerCase().endsWith(".png") && !url.toLowerCase().endsWith(".jpg")) url += ".png";
-    return `<img src="${url}" class="q-img" onerror="this.style.display='none'">`;
+
+    // 1. 確保連結包含通訊協定
+    if (url.startsWith('//')) url = 'https:' + url;
+    
+    // 2. 只有在網址完全沒有副檔名時，才主動加 .png
+    // 原本的邏輯可能會導致重複加後綴 (例如 .png.png)
+    const hasExtension = /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
+    if (url.includes("meee.com.tw") && !hasExtension) {
+        url += ".png";
+    }
+
+    // 3. onerror 改用修復邏輯，而不是直接隱藏
+    return `<img src="${url}" class="q-img" onerror="repairImg(this)">`;
+}
+
+// 新增一個修復函數
+function repairImg(img) {
+    // 檢查是否已經嘗試過修復，避免無限迴圈
+    if (!img.dataset.tried) {
+        img.dataset.tried = "1";
+        
+        // 嘗試方案 A: 如果沒有 .png，加加看
+        if (!img.src.toLowerCase().endsWith(".png")) {
+            img.src += ".png";
+            return;
+        }
+        // 嘗試方案 B: 如果已經有 .png 還是錯，試試 .jpg
+        if (img.src.toLowerCase().endsWith(".png")) {
+            img.src = img.src.replace(".png", ".jpg");
+            return;
+        }
+    }
+    
+    // 如果修復過還是失敗，再隱藏（或者顯示一張預設的「圖片遺失」圖）
+    img.style.display = 'none';
+    console.error("圖片載入最終失敗：" + img.src);
 }
 
 function render(filterMode) {
@@ -1106,6 +1140,7 @@ render(0);
 </script>
 </body>
 </html>
+
 
 
 
